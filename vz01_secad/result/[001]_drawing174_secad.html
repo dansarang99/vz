@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>SECAD — 3D 연습도면 174 (브래킷)</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#f5f5f0;font-family:'Malgun Gothic',sans-serif;padding:20px}
+h2{text-align:center;font-size:15px;margin-bottom:6px;color:#333}
+.info{text-align:center;font-size:11px;color:#888;margin-bottom:14px}
+.sheet{background:#fff;border:2px solid #000;width:900px;margin:0 auto;position:relative;padding:0}
+
+/* 타이틀블록 */
+.title-block{border-top:1px solid #000;display:flex;font-size:10px;height:54px}
+.tb-cell{border-right:1px solid #000;padding:3px 6px;display:flex;flex-direction:column;justify-content:center}
+.tb-label{color:#666;font-size:9px}
+.tb-val{font-size:11px;font-weight:700}
+.tb-wide{flex:1}
+
+/* 도면 영역 */
+.drawing-area{position:relative;width:900px;height:620px;overflow:hidden}
+canvas{position:absolute;top:0;left:0}
+
+/* 주서 */
+.note{position:absolute;left:10px;bottom:60px;font-size:10px;line-height:1.7}
+.note b{font-size:11px}
+
+/* 뷰 레이블 */
+.view-label{position:absolute;font-size:10px;color:#555;font-weight:600;text-align:center}
+</style>
+</head>
+<body>
+
+<h2>SECAD — 3D 모델링 연습도면 174 (브래킷 / Bracket)</h2>
+<div class="info">출처: 스터디캐드캠 | 척도 1:1 | 3각법 | 지시없는 모깎기 R3</div>
+
+<div class="sheet">
+  <!-- 도면 제목 바 -->
+  <div style="border-bottom:1px solid #000;padding:4px 10px;font-size:11px;font-weight:700;background:#fafafa;display:flex;justify-content:space-between">
+    <span>도면번호: 174 — 브래킷 (Bracket)</span>
+    <span style="color:#888;font-weight:400">SECAD v1.0  |  단위: mm</span>
+  </div>
+
+  <div class="drawing-area">
+    <canvas id="cv" width="900" height="620"></canvas>
+
+    <!-- 뷰 레이블 -->
+    <div class="view-label" style="left:150px;top:590px;width:180px">▲ 정면도 (FRONT VIEW)</div>
+    <div class="view-label" style="left:150px;top:5px;width:180px">평면도 (TOP VIEW) ▼</div>
+    <div class="view-label" style="left:610px;top:590px;width:180px">▲ 우측면도 (RIGHT VIEW)</div>
+    <div class="view-label" style="left:550px;top:5px;width:60px">등각도</div>
+  </div>
+
+  <!-- 타이틀블록 -->
+  <div class="title-block">
+    <div class="tb-cell" style="width:60px"><div class="tb-label">척도</div><div class="tb-val">1:1</div></div>
+    <div class="tb-cell" style="width:60px"><div class="tb-label">투상</div><div class="tb-val">3각법</div></div>
+    <div class="tb-cell tb-wide"><div class="tb-label">도명</div><div class="tb-val">3D 모델링 연습도면 174 — 브래킷</div></div>
+    <div class="tb-cell" style="width:80px"><div class="tb-label">일시</div><div class="tb-val">2026.10.01</div></div>
+    <div class="tb-cell" style="width:60px"><div class="tb-label">제도</div><div class="tb-val">SECAD</div></div>
+    <div class="tb-cell" style="width:60px;border-right:none"><div class="tb-label">검도</div><div class="tb-val"></div></div>
+  </div>
+
+  <!-- 주서 -->
+  <div class="note">
+    <b>주 서</b><br>
+    1. 지시없는 모깎기는 R3<br>
+    2. 재질: 미지정<br>
+    3. 단위: mm
+  </div>
+</div>
+
+<script>
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+
+// ── 스타일 헬퍼 ──
+function solid(lw=0.8, color='#000'){ctx.setLineDash([]);ctx.strokeStyle=color;ctx.lineWidth=lw;}
+function center(lw=0.5){ctx.setLineDash([8,3,2,3]);ctx.strokeStyle='#c00';ctx.lineWidth=lw;}
+function hidden(lw=0.5){ctx.setLineDash([4,3]);ctx.strokeStyle='#555';ctx.lineWidth=lw;}
+function dim_style(){ctx.setLineDash([]);ctx.strokeStyle='#000';ctx.lineWidth=0.7;ctx.font='9px Arial';}
+
+function line(x1,y1,x2,y2){ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}
+function rect_s(x,y,w,h){ctx.beginPath();ctx.rect(x,y,w,h);ctx.stroke();}
+function circle_s(cx,cy,r){ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();}
+function arc_s(cx,cy,r,a1,a2){ctx.beginPath();ctx.arc(cx,cy,r,a1,a2);ctx.stroke();}
+
+function arrow(x1,y1,x2,y2,lbl,pos='mid'){
+  ctx.save();dim_style();
+  // line
+  line(x1,y1,x2,y2);
+  // arrowheads
+  const dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
+  const ux=dx/len,uy=dy/len;
+  const arw=5;
+  // head at p2
+  ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-ux*arw-uy*arw/2,y2-uy*arw+ux*arw/2);ctx.lineTo(x2-ux*arw+uy*arw/2,y2-uy*arw-ux*arw/2);ctx.closePath();ctx.fill();
+  // head at p1
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x1+ux*arw-uy*arw/2,y1+uy*arw+ux*arw/2);ctx.lineTo(x1+ux*arw+uy*arw/2,y1+uy*arw-ux*arw/2);ctx.closePath();ctx.fill();
+  // label
+  ctx.fillStyle='#000';ctx.font='bold 9px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+  const mx=(x1+x2)/2,my=(y1+y2)/2;
+  ctx.fillStyle='#fff';ctx.fillRect(mx-12,my-6,24,12);
+  ctx.fillStyle='#000';ctx.fillText(lbl,mx,my);
+  ctx.restore();
+}
+
+function leader(x1,y1,x2,y2,lbl){
+  ctx.save();dim_style();
+  ctx.setLineDash([]);ctx.strokeStyle='#000';ctx.lineWidth=0.7;
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  // small arrow at start
+  const dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
+  const ux=dx/len,uy=dy/len,arw=4;
+  ctx.fillStyle='#000';
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x1+ux*arw-uy*arw/2,y1+uy*arw+ux*arw/2);ctx.lineTo(x1+ux*arw+uy*arw/2,y1+uy*arw-ux*arw/2);ctx.closePath();ctx.fill();
+  ctx.font='bold 9px Arial';ctx.fillStyle='#000';ctx.textAlign='left';ctx.textBaseline='middle';
+  ctx.fillText(lbl,x2+3,y2);
+  ctx.restore();
+}
+
+function ext_line(x1,y1,x2,y2){
+  ctx.save();solid(0.4,'#888');line(x1,y1,x2,y2);ctx.restore();
+}
+
+// ─────────────────────────────────────────
+//  SCALE: 1mm = 2px  (실 치수의 절반 표시)
+// ─────────────────────────────────────────
+const S=2;  // scale factor
+const sc=v=>v*S; // convert mm to px
+
+// ═══════════════════════════════════════════
+//  A. 정면도 (FRONT VIEW)  — 좌하단
+//     원점: (60, 580) 기준, y는 위로 증가
+// ═══════════════════════════════════════════
+const FX=60, FY=580; // 정면도 원점 (화면 픽셀)
+function f(x,y){return [FX+sc(x), FY-sc(y)];}
+
+// 베이스 외곽 (150×45)
+solid(1.5);
+const [bx0,by0]=f(0,0);
+const [bx1,by1]=f(150,0);
+const [bx2,by2]=f(150,45);
+const [bx3,by3]=f(0,45);
+ctx.beginPath();ctx.moveTo(...f(0,0));ctx.lineTo(...f(150,0));ctx.lineTo(...f(150,45));ctx.lineTo(...f(0,45));ctx.closePath();ctx.stroke();
+
+// 베이스 하단 두께선 (두께 10)
+solid(1.2);
+line(...f(0,10),  ...f(150,10));
+
+// 수직 리브 외곽 (가운데: x=55~95, 높이75)
+// 하단 베이스 위에서 시작
+solid(1.5);
+ctx.beginPath();
+ctx.moveTo(...f(55,10));
+ctx.lineTo(...f(55,75-21)); // 좌측 수직
+// 상단 R21 반원
+ctx.arc(...f(75,75-21), sc(21), Math.PI, 0, false);
+ctx.lineTo(...f(95,10)); // 우측 수직
+ctx.stroke();
+
+// 리브 상단 연결선 (bezel to base top)
+solid(1.0);
+line(...f(55,45),...f(55,10)); // 내부 left
+line(...f(95,45),...f(95,10)); // 내부 right
+
+// 좌측 리브 경사 (R15 라운드 포함)
+solid(1.2);
+// 좌측 날개: x=0~55, top=y25 (경사)
+ctx.beginPath();ctx.moveTo(...f(0,45));ctx.lineTo(...f(0,25));
+// R15 라운드 코너
+ctx.arc(...f(15,25), sc(15), Math.PI, Math.PI*1.5, false);
+ctx.lineTo(...f(55,10));ctx.stroke();
+
+// 우측 날개 (대칭): x=95~150
+ctx.beginPath();ctx.moveTo(...f(150,45));ctx.lineTo(...f(150,25));
+ctx.arc(...f(135,25), sc(15), 0, Math.PI*1.5, true);
+ctx.lineTo(...f(95,10));ctx.stroke();
+
+// φ16 구멍 2개 (중심: x=65,85, y=54 from base)
+solid(0.8);
+// 두 구멍 중심 x: 75-10=65, 75+10=85; y=75-21=54
+circle_s(...f(65,54), sc(8));   // φ16/2=8
+circle_s(...f(85,54), sc(8));
+
+// φ11 구멍 하단 (베이스 위, 정면에서 보이는 것: x=30,60,90,120, y=5)
+hidden(0.7);
+circle_s(...f(30,5), sc(5.5));  // φ11/2
+circle_s(...f(120,5), sc(5.5));
+
+// 중심선 — 수직 리브
+center(0.6);
+line(...f(65,-5),...f(65,75));
+line(...f(85,-5),...f(85,75));
+line(...f(75,-5),...f(75,82));
+
+// 중심선 — 하단 구멍
+line(...f(30,-5),...f(30,15));
+line(...f(120,-5),...f(120,15));
+
+// ─── 정면도 치수 ───
+// 전체 폭 150
+ext_line(...f(0,0),...f(0,-15));
+ext_line(...f(150,0),...f(150,-15));
+arrow(...f(0,-12),...f(150,-12),'150');
+
+// 전체 높이 75
+ext_line(...f(155,0),...f(168,0));
+ext_line(...f(155,75),...f(168,75));
+arrow(...f(164,0),...f(164,75),'75');
+
+// 베이스 두께 10
+ext_line(...f(155,10),...f(172,10));
+arrow(...f(168,0),...f(168,10),'10');
+
+// 리브폭 40
+ext_line(...f(55,10),...f(55,-25));
+ext_line(...f(95,10),...f(95,-25));
+arrow(...f(55,-22),...f(95,-22),'40');
+
+// 중심간 20
+ext_line(...f(65,75),...f(65,90));
+ext_line(...f(85,75),...f(85,90));
+arrow(...f(65,87),...f(85,87),'20');
+
+// R21
+ctx.save();ctx.font='bold 9px Arial';ctx.fillStyle='#000';ctx.fillText('R21',...f(96,75));ctx.restore();
+
+// 리브 위치 좌측 φ10
+leader(...f(0,25),...f(-35,20),'R15');
+
+// 하단 φ11
+leader(...f(30,5),...f(10,-15),'φ11');
+leader(...f(120,5),...f(140,-15),'4-φ11');
+
+// 수직 φ16
+leader(...f(65,54),...f(48,70),'2-φ16');
+
+// 베이스 우측 45
+ext_line(...f(150,0),...f(178,0));
+ext_line(...f(150,45),...f(178,45));
+arrow(...f(175,0),...f(175,45),'45');
+
+// ═══════════════════════════════════════════
+//  B. 평면도 (TOP VIEW) — 정면도 위
+//     원점: (60, 220) 기준 (평면도)
+// ═══════════════════════════════════════════
+const TX=60, TY=220;
+function t(x,y){return [TX+sc(x), TY-sc(y)];}
+
+// 외곽 150×82
+solid(1.5);
+ctx.beginPath();ctx.rect(...t(0,0),sc(150),sc(82));ctx.stroke();
+// 실제로는 위(y큰)가 앞쪽이므로:
+// 베이스 150×82
+line(...t(0,82),...t(150,82));   // 전방 모서리 (front edge = bottom in front view)
+
+// 리브 상부 투영
+solid(1.0);
+line(...t(55,82),...t(55,0));  // 리브 좌측
+line(...t(95,82),...t(95,0));  // 리브 우측
+
+// 상단 반원 투영 (폭 40, 중심 y=82-(82-42)=42)
+// 리브 두께: 보스 상단 R21, 평면에서는 반원 2개
+solid(1.0);
+arc_s(...t(65,82), sc(21), Math.PI, 0, false); // 좌 보스
+arc_s(...t(85,82), sc(21), Math.PI, 0, false); // 우 보스
+
+// 리브 내부 홈 (depth)
+hidden(0.7);
+line(...t(15,82),...t(15,10));  // R15 경계
+line(...t(135,82),...t(135,10));
+
+// 구멍 위에서 본 것
+solid(0.8);
+circle_s(...t(65,82), sc(8));  // φ16 보스 구멍
+circle_s(...t(85,82), sc(8));
+
+// 하단 볼트 구멍 4개 (φ11)
+solid(0.8);
+circle_s(...t(30,15), sc(5.5));
+circle_s(...t(30,67), sc(5.5));
+circle_s(...t(120,15), sc(5.5));
+circle_s(...t(120,67), sc(5.5));
+
+// φ10 좌측 2개
+circle_s(...t(15,30), sc(5));
+circle_s(...t(15,52), sc(5));
+
+// 중심선
+center(0.6);
+line(...t(65,-5),...t(65,92));
+line(...t(85,-5),...t(85,92));
+line(...t(-5,82),...t(158,82));
+line(...t(-5,15),...t(158,15));
+line(...t(-5,67),...t(158,67));
+line(...t(-5,30),...t(158,30));
+line(...t(-5,52),...t(158,52));
+line(...t(30,-5),...t(30,90));
+line(...t(120,-5),...t(120,90));
+line(...t(15,-5),...t(15,90));
+
+// 평면도 치수
+ext_line(...t(0,82),...t(-15,82));
+ext_line(...t(0,0),...t(-15,0));
+arrow(...t(-12,0),...t(-12,82),'82');
+
+ext_line(...t(30,82),...t(30,95));
+ext_line(...t(120,82),...t(120,95));
+arrow(...t(30,92),...t(120,92),'82'); // 60+22 approximated
+
+// φ10
+leader(...t(15,30),...t(-20,15),'2-φ10');
+// R15 평면
+leader(...t(15,52),...t(-20,65),'R15');
+
+// ═══════════════════════════════════════════
+//  C. 우측면도 (RIGHT SIDE VIEW) — 정면도 우측
+//     원점: (620, 580)
+// ═══════════════════════════════════════════
+const RX=620, RY=580;
+function r(x,y){return [RX+sc(x), RY-sc(y)];}
+
+// 베이스 82×45 (깊이 82, 높이 45)
+solid(1.5);
+ctx.beginPath();ctx.moveTo(...r(0,0));ctx.lineTo(...r(82,0));ctx.lineTo(...r(82,45));ctx.lineTo(...r(0,45));ctx.closePath();ctx.stroke();
+
+// 두께 10
+line(...r(0,10),...r(82,10));
+
+// 수직 리브 측면 (폭=리브 두께, 여기선 정면깊이=40, 측면에서는 폭으로 표현)
+// 리브는 y=10~75, x=21~61 (중앙 기준)
+solid(1.2);
+ctx.beginPath();
+ctx.moveTo(...r(21,10));ctx.lineTo(...r(21,75-21));
+ctx.arc(...r(41,75-21),sc(21),Math.PI,0,false);
+ctx.lineTo(...r(61,10));ctx.stroke();
+
+line(...r(21,45),...r(21,10));
+line(...r(61,45),...r(61,10));
+
+// 경사
+ctx.beginPath();ctx.moveTo(...r(0,45));ctx.lineTo(...r(0,25));
+ctx.arc(...r(15,25),sc(15),Math.PI,Math.PI*1.5,false);
+ctx.lineTo(...r(21,10));ctx.stroke();
+ctx.beginPath();ctx.moveTo(...r(82,45));ctx.lineTo(...r(82,25));
+ctx.arc(...r(67,25),sc(15),0,Math.PI*1.5,true);
+ctx.lineTo(...r(61,10));ctx.stroke();
+
+// φ16 측면 원
+solid(0.8);
+circle_s(...r(31,54),sc(8));
+circle_s(...r(51,54),sc(8));
+
+// 하단 구멍 측면 (숨은선)
+hidden(0.7);
+line(...r(15,0),...r(15,10));
+line(...r(67,0),...r(67,10));
+
+// 중심선
+center(0.6);
+line(...r(41,-5),...r(41,82));
+line(...r(31,-5),...r(31,75));
+line(...r(51,-5),...r(51,75));
+line(...r(-5,54),...r(90,54));
+
+// 우측면도 치수
+ext_line(...r(0,0),...r(-12,0));
+ext_line(...r(0,45),...r(-12,45));
+arrow(...r(-9,0),...r(-9,45),'45');
+
+ext_line(...r(82,0),...r(96,0));
+ext_line(...r(82,45),...r(96,45));
+arrow(...r(93,0),...r(93,45),'45');
+
+ext_line(...r(0,0),...r(-25,0));
+ext_line(...r(82,0),...r(-25+164,0));
+// 폭 82
+ext_line(...r(82,82+8),...r(0,82+8));
+arrow(...r(0,82+5),...r(82,82+5),'82');
+
+// 리브 깊이 40
+ext_line(...r(21,10),...r(21,-18));
+ext_line(...r(61,10),...r(61,-18));
+arrow(...r(21,-15),...r(61,-15),'40');
+
+// 보스 간격 21
+ext_line(...r(31,75),...r(31,90));
+ext_line(...r(51,75),...r(51,90));
+arrow(...r(31,87),...r(51,87),'21');
+
+// 높이 75
+ext_line(...r(82,0),...r(110,0));
+ext_line(...r(82,75),...r(110,75));
+arrow(...r(107,0),...r(107,75),'75');
+
+// ─── 도면 경계 ───
+solid(2,'#000');
+ctx.strokeRect(5,5,890,670);
+
+// ─── 투상선 (projection lines) ───
+solid(0.3,'#aaa');
+ctx.setLineDash([2,4]);
+// 정면~측면 수평 연결
+line(FX+sc(150),FY, RX, FY);
+line(FX+sc(150),FY-sc(45), RX, RY-sc(45));
+line(FX+sc(150),FY-sc(75), RX, RY-sc(75));
+// 정면~평면 수직 연결
+line(FX,FY-sc(45), FX, TY);
+line(FX+sc(150),FY-sc(45), FX+sc(150), TY);
+ctx.setLineDash([]);
+
+// ─── 등각 스케치 박스 ───
+solid(0.8,'#0066cc');
+ctx.font='bold 10px Arial';ctx.fillStyle='#0066cc';
+ctx.fillText('참고: 원본 3D 등각도 →', 560, 20);
+// 간단 등각 스케치
+const IX=580,IY=80;
+function iso(x,y,z){
+  // 등각 변환
+  const px=IX+(x-z)*0.866*1.2;
+  const py=IY+(-y+(x+z)*0.5)*1.2;
+  return [px,py];
+}
+solid(1,'#0066cc');
+// 베이스
+ctx.beginPath();
+ctx.moveTo(...iso(0,0,0));ctx.lineTo(...iso(150,0,0));ctx.lineTo(...iso(150,0,82));ctx.lineTo(...iso(0,0,82));ctx.closePath();ctx.stroke();
+ctx.beginPath();
+ctx.moveTo(...iso(0,10,0));ctx.lineTo(...iso(150,10,0));ctx.lineTo(...iso(150,10,82));ctx.lineTo(...iso(0,10,82));ctx.closePath();ctx.stroke();
+// 수직선
+['','150','82','150+82','150+82'].forEach(()=>{});
+for(const [a,b,c] of [[0,0,0],[150,0,0],[150,0,82],[0,0,82]]){
+  const [px,py]=iso(a,0,c);
+  const [qx,qy]=iso(a,10,c);
+  ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(qx,qy);ctx.stroke();
+}
+// 리브 수직부 간략
+const ribL=iso(55,10,21), ribR=iso(95,10,21);
+const ribLT=iso(55,75,21), ribRT=iso(95,75,21);
+ctx.beginPath();
+ctx.moveTo(...ribL);ctx.lineTo(...ribLT);
+ctx.moveTo(...ribR);ctx.lineTo(...ribRT);
+ctx.stroke();
+line(...ribL,...ribR);
+line(...ribLT,...ribRT);
+
+ctx.font='9px Arial';ctx.fillStyle='#0066cc';ctx.fillText('(참고용 등각 스케치)',560,210);
+
+// ─── 범례 ───
+const LX=750,LY=450;
+solid(1.5,'#000');line(LX,LY,LX+25,LY);ctx.fillStyle='#000';ctx.font='9px Arial';ctx.fillText('외형선',LX+28,LY+3);
+center(0.6);line(LX,LY+14,LX+25,LY+14);ctx.fillStyle='#c00';ctx.fillText('중심선',LX+28,LY+17);
+hidden(0.7);line(LX,LY+28,LX+25,LY+28);ctx.fillStyle='#555';ctx.fillText('숨은선',LX+28,LY+31);
+ctx.setLineDash([]);
+
+</script>
+</body>
+</html>

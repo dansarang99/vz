@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SECAD Drawing 174 - Engineering Coordinate L-Shape</title>
+    <style>
+        body { margin: 0; background-color: #0f172a; color: #fff; font-family: monospace; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        svg { background-color: #1e293b; border: 1px solid #334155; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        
+        .layer1-l-shape { fill: rgba(56, 189, 248, 0.3); stroke: #38bdf8; stroke-width: 4; stroke-linejoin: round; }
+        .boss-reference { fill: none; stroke: #94a3b8; stroke-width: 2; stroke-dasharray: 8,4; }
+        .point { fill: #ef4444; }
+        .coord-label { fill: #fcd34d; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 14px; font-weight: bold; }
+        .center { fill: none; stroke: #ef4444; stroke-width: 1.5; stroke-dasharray: 15,5,5,5; }
+        .grid { stroke: #334155; stroke-width: 0.5; }
+    </style>
+</head>
+<body>
+    <svg width="800" height="600">
+        <!-- 배경 그리드 -->
+        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" class="grid"/>
+        </pattern>
+        <rect width="100%" height="100%" fill="url(#grid)" />
+        
+        <text x="20" y="40" font-family="monospace" font-size="24" fill="#38bdf8">SECAD 제1단면 (10T L-Shape) 공학 좌표 검증</text>
+        <text x="20" y="70" font-family="monospace" font-size="14" fill="#10b981">HEIGHT MEASURED: STOPS EXACTLY AT CENTER LINE (Y=75)</text>
+
+        <!-- 
+             절대 픽셀 매핑 (Native Y-Down SVG)
+             Scale = 4배 확대
+             Origin (0,0) = SVG (40, 520)
+        -->
+        
+        <!-- 우측 둥근 기둥(제2단면 보스)을 점선으로 먼저 그려서 구조를 보여줌 -->
+        <circle cx="556" cy="220" r="84" class="boss-reference" />
+        <text x="565" y="160" class="coord-label" style="fill:#94a3b8; font-size:12px;">제2단면 (원형 보스 R21)</text>
+
+        <!-- 중심선 (Y=75) -->
+        <path d="M 450,220 L 680,220" class="center" />
+        <text x="690" y="225" class="coord-label" style="fill:#ef4444; font-size:12px;">중심선 (Y=75)</text>
+
+        <!-- 중심선 (X=129) -->
+        <path d="M 556,120 L 556,320" class="center" />
+        <text x="545" y="340" class="coord-label" style="fill:#ef4444; font-size:12px;">X=129</text>
+
+        <!-- 제1단면 L자 패스 (처음부터 끝까지 10T 유지, 높이 75에서 멈춤) -->
+        <path d="
+            M 40,520 
+            L 640,520 
+            L 640,220 
+            L 600,220 
+            L 600,480 
+            L 40,480 
+            Z" 
+        class="layer1-l-shape" />
+
+        <!-- 6개의 핵심 공학 좌표점 표기 -->
+        <circle cx="40" cy="520" r="6" class="point" />
+        <text x="10" y="545" class="coord-label">(0, 0)</text>
+
+        <circle cx="640" cy="520" r="6" class="point" />
+        <text x="610" y="545" class="coord-label">(150, 0)</text>
+
+        <circle cx="640" cy="220" r="6" class="point" />
+        <text x="655" y="215" class="coord-label">(150, 75) 높이 측정점</text>
+
+        <!-- 기둥 중심선을 넘어선 10T 마감점 -->
+        <circle cx="600" cy="220" r="6" class="point" style="fill:#10b981;" />
+        <text x="495" y="200" class="coord-label" style="fill:#10b981;">(140, 75) 10T 마감</text>
+
+        <circle cx="600" cy="480" r="6" class="point" />
+        <text x="615" y="495" class="coord-label">(140, 10)</text>
+
+        <circle cx="40" cy="480" r="6" class="point" />
+        <text x="10" y="470" class="coord-label">(0, 10)</text>
+
+        <!-- 두께 지시선 -->
+        <path d="M 600,350 L 640,350 M 600,345 L 600,355 M 640,345 L 640,355" stroke="#fcd34d" stroke-width="2" />
+        <text x="610" y="340" fill="#fcd34d" font-size="14">10T</text>
+    </svg>
+</body>
+</html>

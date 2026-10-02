@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>SECAD — 도면174 평면도 (Top View 수정판)</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#ddd;font-family:'Malgun Gothic',sans-serif;padding:20px;display:flex;flex-direction:column;align-items:center}
+h2{font-size:14px;margin-bottom:10px;color:#333}
+.sheet{background:#fff;border:2px solid #000;padding:20px;position:relative}
+canvas{display:block}
+</style>
+</head>
+<body>
+<h2>연습도면 174 — 평면도 (Top View) 최종 검증판</h2>
+<div class="sheet">
+<canvas id="cv" width="600" height="400"></canvas>
+</div>
+
+<script>
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const S = 3.5; // 확대 비율
+
+// ── 확정 치수 ──
+const L = 150, W = 82;
+const Gap = 20;
+const RibT = 10;
+const PadR = 15;
+const PadW = PadR * 2; // 30mm
+
+// Y 좌표 계산 (중앙을 기준으로 대칭)
+const CenterY = W / 2; // 41
+const GapTop = CenterY - Gap/2; // 31
+const GapBot = CenterY + Gap/2; // 51
+
+// 리브 Y좌표 (폭 10, 안쪽 홈에 맞춰짐)
+const Rib1Top = GapTop - RibT; // 21
+const Rib1Bot = GapTop;        // 31
+const Rib2Top = GapBot;        // 51
+const Rib2Bot = GapBot + RibT; // 61
+
+// 패드 Y좌표 (폭 30, 안쪽 홈에 맞춰지고 바깥으로 튀어나옴)
+const Pad1Top = GapTop - PadW; // 31 - 30 = 1
+const Pad1Bot = GapTop;        // 31
+const Pad2Top = GapBot;        // 51
+const Pad2Bot = GapBot + PadW; // 51 + 30 = 81
+
+// 구멍 및 아크 중심좌표
+const HoleCx = 15;
+const Hole1Cy = Pad1Top + PadR; // 1 + 15 = 16
+const Hole2Cy = Pad2Top + PadR; // 51 + 15 = 66
+
+// 우측 보스 중심
+const BossCx = L - 21; // 129
+
+// 바닥홀 X좌표
+const HoleRightX = L - 30; // 120
+const HoleLeftX = HoleRightX - 60; // 60
+const HoleYTop = 10.5;
+const HoleYBot = W - 10.5;
+
+// 원점
+const OX = 30, OY = 40; 
+const p=(x,y)=>[OX+x*S, OY+y*S];
+
+// 그리기 유틸
+function O(lw=1.5,col='#000'){ctx.lineWidth=lw;ctx.strokeStyle=col;ctx.setLineDash([]);}
+function CL(){ctx.lineWidth=0.7;ctx.strokeStyle='#c00';ctx.setLineDash([8,3,2,3]);}
+function HD(){ctx.lineWidth=1;ctx.strokeStyle='#444';ctx.setLineDash([4,3]);}
+
+const line=(x1,y1,x2,y2)=>{ctx.beginPath();ctx.moveTo(...p(x1,y1));ctx.lineTo(...p(x2,y2));ctx.stroke();}
+const circ=(x,y,r)=>{ctx.beginPath();ctx.arc(...p(x,y), r*S, 0, Math.PI*2);ctx.stroke();}
+const arc=(x,y,r,a1,a2,cw=false)=>{ctx.beginPath();ctx.arc(...p(x,y), r*S, a1, a2, cw);ctx.stroke();}
+
+// [1] 베이스 외곽
+O(2);
+ctx.beginPath();ctx.rect(...p(0,0), L*S, W*S);ctx.stroke();
+
+// [2] 좌측 패드 외곽 (바깥으로 튀어나온 부분 + 둥근 마감)
+O(1.5);
+// 상단 패드
+line(HoleCx, Pad1Top, BossCx, Pad1Top); // 패드 바깥 선 (직선부)
+arc(HoleCx, Hole1Cy, PadR, -Math.PI/2, Math.PI/2, true); // R15 반원
+// 하단 패드
+line(HoleCx, Pad2Bot, BossCx, Pad2Bot); 
+arc(HoleCx, Hole2Cy, PadR, Math.PI/2, -Math.PI/2, true); // R15 반원
+
+// [3] 리브 안쪽 선 (홈 경계선, 패드와 일직선)
+line(HoleCx, GapTop, L, GapTop);
+line(HoleCx, GapBot, L, GapBot);
+
+// [4] 리브 바깥쪽 선 (리브 두께 10mm 위치)
+// 패드(폭30)에서 리브(폭10)로 좁아지는 턱(Step) 표시
+line(BossCx, Rib1Top, L, Rib1Top); // 상단 리브 선
+line(BossCx, Rib1Top, BossCx, Pad1Top); // 턱 수직선
+line(BossCx, Rib2Bot, L, Rib2Bot); // 하단 리브 선
+line(BossCx, Rib2Bot, BossCx, Pad2Bot); // 턱 수직선
+
+// [5] 우측 보스 (R21)
+O(1.5);
+line(BossCx, GapTop, BossCx, GapTop - 21);
+line(BossCx, GapBot, BossCx, GapBot + 21);
+HD(); // 보스 하단 숨은선
+line(BossCx, GapTop, BossCx, GapBot);
+
+// [6] 좌측 끝 구멍 (2-φ10) - 동심원 정확히 일치
+O(1.5);
+circ(HoleCx, Hole1Cy, 5);
+circ(HoleCx, Hole2Cy, 5);
+
+// [7] 우측 보스 구멍 (2-φ16) - 위에서 본 숨은선
+HD();
+line(BossCx - 8, GapTop - 21, BossCx - 8, GapTop);
+line(BossCx + 8, GapTop - 21, BossCx + 8, GapTop);
+line(BossCx - 8, GapBot, BossCx - 8, GapBot + 21);
+line(BossCx + 8, GapBot, BossCx + 8, GapBot + 21);
+
+// [8] 바닥판 구멍 (4-φ11)
+O(1.5);
+circ(HoleLeftX, HoleYTop, 5.5);
+circ(HoleRightX, HoleYTop, 5.5);
+circ(HoleLeftX, HoleYBot, 5.5);
+circ(HoleRightX, HoleYBot, 5.5);
+
+// [9] 중심선들
+CL();
+// 전체 수평
+line(-10, CenterY, L+10, CenterY);
+// 좌측 구멍
+line(HoleCx-12, Hole1Cy, HoleCx+12, Hole1Cy);
+line(HoleCx, Hole1Cy-12, HoleCx, Hole1Cy+12);
+line(HoleCx-12, Hole2Cy, HoleCx+12, Hole2Cy);
+line(HoleCx, Hole2Cy-12, HoleCx, Hole2Cy+12);
+// 바닥 구멍
+[HoleLeftX, HoleRightX].forEach(x => {
+  line(x-8, HoleYTop, x+8, HoleYTop); line(x, HoleYTop-8, x, HoleYTop+8);
+  line(x-8, HoleYBot, x+8, HoleYBot); line(x, HoleYBot-8, x, HoleYBot+8);
+});
+// 우측 보스
+line(BossCx, -5, BossCx, W+5);
+
+</script>
+</body>
+</html>

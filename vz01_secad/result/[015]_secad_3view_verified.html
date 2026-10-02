@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SECAD Drawing 174</title>
+    <style>
+        svg { background-color: #1e1e1e; }
+        .outline { fill: none; stroke: #38bdf8; stroke-width: 2; }
+        .hidden { fill: none; stroke: #94a3b8; stroke-width: 1; stroke-dasharray: 8,5; }
+        .center { fill: none; stroke: #ef4444; stroke-width: 1; stroke-dasharray: 20,5,5,5; }
+        .text { fill: #ffffff; font-family: sans-serif; font-size: 12px; }
+        .grid { stroke: #333333; stroke-width: 0.5; }
+    </style>
+</head>
+<body>
+    <h2>Drawing 174 - SECAD 3-View</h2>
+    <svg width="800" height="600">
+        <!-- Grid -->
+        <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+            <path d="M 10 0 L 0 0 0 10" fill="none" class="grid"/>
+        </pattern>
+        <rect width="100%" height="100%" fill="url(#grid)" />
+
+        <!-- Top View (X, Y) -> Offset (100, 50) -->
+        <g id="top-view">
+            <text x="100" y="40" class="text">TOP VIEW</text>
+            <rect x="100" y="50" width="150" height="82" class="outline" />
+            <circle cx="229" cy="91" r="20" class="outline" />
+            <line x1="200" y1="91" x2="258" y2="91" class="center" />
+            <line x1="229" y1="60" x2="229" y2="122" class="center" />
+        </g>
+
+        <!-- Front View (X, -Z) -> Offset (100, 300) -->
+        <g id="front-view">
+            <text x="100" y="320" class="text">FRONT VIEW</text>
+            <!-- Base -->
+            <rect x="100" y="290" width="150" height="10" class="outline" />
+            <!-- Boss -->
+            <rect x="209" y="204" width="40" height="86" class="outline" />
+            <!-- Center Line -->
+            <line x1="229" y1="190" x2="229" y2="310" class="center" />
+        </g>
+
+        <!-- Right View (Y, -Z) -> Offset (300, 300) -->
+        <g id="right-view">
+            <text x="300" y="320" class="text">RIGHT VIEW</text>
+            <!-- Base -->
+            <rect x="300" y="290" width="82" height="10" class="outline" />
+            <!-- Boss -->
+            <rect x="321" y="204" width="40" height="86" class="outline" />
+            <!-- Center Line -->
+            <line x1="341" y1="190" x2="341" y2="310" class="center" />
+        </g>
+        
+        <!-- Alignment Lines (Optional, for visual verification) -->
+        <g id="alignment">
+            <!-- Front to Top X -->
+            <line x1="100" y1="132" x2="100" y2="290" class="hidden" />
+            <line x1="250" y1="132" x2="250" y2="290" class=\"hidden\" />
+            <line x1="229" y1="122" x2="229" y2="204" class="hidden" />
+            
+            <!-- Front to Right Z -->
+            <line x1="250" y1="290" x2="300" y2="290" class="hidden" />
+            <line x1="250" y1="300" x2="300" y2="300" class="hidden" />
+            <line x1="249" y1="204" x2="321" y2="204" class="hidden" />
+        </g>
+    </svg>
+</body>
+</html>

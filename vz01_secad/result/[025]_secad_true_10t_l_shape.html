@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SECAD Drawing 174 - True 10T L-Shape</title>
+    <style>
+        body { margin: 0; background-color: #0f172a; color: #fff; font-family: monospace; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        svg { background-color: #1e293b; border: 1px solid #334155; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        
+        /* 제2단면 (뒤에 깔리는 뚱뚱한 기둥들) */
+        .layer2-boss { fill: #334155; stroke: #38bdf8; stroke-width: 2; }
+        
+        /* 제1단면 (가장 앞에 서 있는 10T L자 프레임) */
+        .layer1-true-L { fill: rgba(56, 189, 248, 0.4); stroke: #60a5fa; stroke-width: 4; stroke-linejoin: round; }
+        
+        .rib { fill: none; stroke: #38bdf8; stroke-width: 2; stroke-linecap: round; }
+        .hidden { fill: none; stroke: #94a3b8; stroke-width: 2; stroke-dasharray: 6,4; }
+        .center { fill: none; stroke: #ef4444; stroke-width: 1.5; stroke-dasharray: 15,5,5,5; }
+        .grid { stroke: #334155; stroke-width: 0.5; }
+        .label { fill: #fcd34d; font-family: sans-serif; font-size: 14px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <svg width="800" height="600">
+        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" class="grid"/>
+        </pattern>
+        <rect width="100%" height="100%" fill="url(#grid)" />
+        <text x="20" y="40" font-family="monospace" font-size="22" fill="#38bdf8">SECAD MASTER PIECE: THE TRUE 10T L-SHAPE</text>
+        <text x="20" y="65" font-family="monospace" font-size="14" fill="#fcd34d">DIRECTOR'S INSIGHT: L-SHAPE IS A UNIFORM 10T FOREGROUND FRAME</text>
+
+        <!-- 절대 픽셀 매핑 (배율 4배, 원점 X=40, Y=520, SVG Native Y-Down) -->
+        
+        <!-- ======================================================= -->
+        <!-- 제2단면 (Layer 2) : 뒤에 덧대어진 뚱뚱한 기둥들 (먼저 그려서 뒤로 보냄) -->
+        <!-- ======================================================= -->
+        
+        <!-- 우측 기둥 (반지름 21 = SVG 84, 중심 129 = SVG 556) -->
+        <circle cx="556" cy="220" r="84" class="layer2-boss" />
+        
+        <!-- 좌측 기둥 (반지름 15 = SVG 60, 중심 15 = SVG 100) -->
+        <!-- 바닥(Y=10) 위에 위치 -->
+        <path d="M 40,480 L 40,420 A 60 60 0 0 1 160,420 L 160,480 Z" class="layer2-boss" />
+
+        <!-- 제3단면 (Rib) -->
+        <path d="M 100,360 L 556,136" class="rib" />
+
+        <!-- ======================================================= -->
+        <!-- 제1단면 (Layer 1) : 완벽한 10T 두께의 L자 프레임 (가장 마지막에 그려서 앞을 덮음) -->
+        <!-- ======================================================= -->
+        <!-- 
+             본부장님 말씀대로, 처음부터 끝까지 두께 10T(픽셀 40)를 칼같이 유지!
+             수평바닥: X=0(40) ~ X=150(640), 두께 10(픽셀 40)
+             수직기둥: 우측 끝 X=140(600) ~ X=150(640), 두께 10(픽셀 40)
+             -> 우측 기둥의 중심선 X=129(556)를 훌쩍 넘어서 X=140에서 마무리됨!
+        -->
+        <path d="
+            M 40,520 
+            L 640,520 
+            L 640,136 
+            L 600,136 
+            L 600,480 
+            L 40,480 
+            Z" 
+        class="layer1-true-L" />
+
+        <text x="610" y="300" class="label" transform="rotate(90 610 300)">10T 수직 프레임</text>
+        <text x="250" y="505" class="label">10T 수평 베이스</text>
+
+        <!-- 단면의 구멍 (정면 실선) -->
+        <circle cx="100" cy="420" r="20" class="rib" style="fill:#1e293b;" />  <!-- 좌측 귀 구멍 -->
+        <circle cx="556" cy="220" r="32" class="rib" style="fill:#1e293b;" /> <!-- 우측 귀 구멍 -->
+
+        <!-- 중심선 (Center Lines) -->
+        <!-- 우측 기둥 중심선 (X=129) -->
+        <path d="M 556,100 L 556,550" class="center" />
+        <text x="560" y="540" class="label" style="fill:#ef4444; font-size:12px;">중심선(129)</text>
+
+        <path d="M 100,340 L 100,550" class="center" /> <!-- 좌측 원 중심 -->
+        
+    </svg>
+</body>
+</html>

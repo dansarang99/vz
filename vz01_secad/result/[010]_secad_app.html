@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>SECAD Studio Pro</title>
+<style>
+    body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #e2e8f0; }
+    .app-container { display: flex; height: 100vh; width: 100vw; overflow: hidden; }
+    
+    /* Left Sidebar: Controls */
+    .sidebar { width: 350px; background: #1e293b; padding: 25px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px; border-right: 1px solid #334155; z-index: 10; }
+    .sidebar h2 { margin: 0 0 5px 0; font-size: 24px; color: #38bdf8; font-weight: 800; letter-spacing: 1px; }
+    .sidebar p.sub { margin: 0 0 15px 0; font-size: 11px; color: #94a3b8; text-transform: uppercase; border-bottom: 1px solid #334155; padding-bottom: 15px; }
+    .sidebar label { font-size: 13px; font-weight: 600; color: #cbd5e1; }
+    
+    input[type="file"] { background: #0f172a; padding: 12px; border: 1px solid #334155; border-radius: 6px; color: #fff; width: 100%; box-sizing: border-box; cursor: pointer; font-size: 12px; }
+    #imagePreview { width: 100%; height: 180px; background-color: #0f172a; border: 1px dashed #475569; border-radius: 6px; background-size: contain; background-repeat: no-repeat; background-position: center; display: none; }
+    
+    textarea { width: 100%; height: 100px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #38bdf8; padding: 12px; box-sizing: border-box; font-family: inherit; resize: none; font-size: 13px; }
+    textarea::placeholder { color: #475569; }
+    textarea:focus { outline: none; border-color: #38bdf8; }
+    
+    #generateBtn { background: #0284c7; color: #fff; border: none; padding: 16px; font-size: 15px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: 0.2s; margin-top: auto; letter-spacing: 1px; }
+    #generateBtn:hover { background: #0369a1; box-shadow: 0 0 15px rgba(2, 132, 199, 0.4); }
+
+    /* Right Panel: SECAD Viewer */
+    .viewer { flex: 1; position: relative; background: #020617; display: flex; justify-content: center; align-items: center; }
+    .canvas-wrapper { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; position: relative; }
+    
+    .empty-state { color: #475569; text-align: center; }
+    .empty-state h3 { margin: 0; font-size: 22px; font-weight: 300; letter-spacing: 2px; }
+    svg { width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="sidebar">
+        <h2>SECAD STUDIO</h2>
+        <p class="sub">Advanced Conceptual CAD Engine</p>
+        
+        <div>
+            <label>1. Source Image (개념 스케치)</label>
+            <input type="file" id="imageInput" accept="image/*">
+            <div id="imagePreview" style="margin-top: 10px;"></div>
+        </div>
+
+        <div>
+            <label>2. Specification (형상 정의)</label>
+            <textarea id="describeInput" placeholder="예: 외경 150, 내경 60의 미래형 플랜지. 4개의 마운팅 홀 포함..."></textarea>
+        </div>
+
+        <button id="generateBtn">GENERATE BLUEPRINT</button>
+    </div>
+
+    <div class="viewer">
+        <div class="canvas-wrapper" id="svgContainer">
+            <div class="empty-state">
+                <h3>SYSTEM READY</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const imgInput = document.getElementById('imageInput');
+    const preview = document.getElementById('imagePreview');
+    const generateBtn = document.getElementById('generateBtn');
+    const descInput = document.getElementById('describeInput');
+    const svgContainer = document.getElementById('svgContainer');
+    
+    let fileCounter = 11; // [011] 부터 넘버링 시작
+
+    imgInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const url = URL.createObjectURL(file);
+            preview.style.backgroundImage = `url(${url})`;
+            preview.style.display = 'block';
+        }
+    });
+
+    generateBtn.addEventListener('click', () => {
+        const desc = descInput.value || "Standard Mechanical Flange Prototype";
+        generateBtn.innerText = "PROCESSING...";
+        generateBtn.style.background = "#059669";
+        
+        setTimeout(() => {
+            const dateStr = new Date().toLocaleDateString();
+            
+            const secadSVG = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900">
+                <defs>
+                    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="1"/>
+                    </pattern>
+                    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="3" result="blur" />
+                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                    </filter>
+                </defs>
+                <rect width="100%" height="100%" fill="#020617"/>
+                <rect width="100%" height="100%" fill="url(#grid)"/>
+                
+                <rect x="30" y="30" width="1140" height="840" fill="none" stroke="#38bdf8" stroke-width="2"/>
+                <rect x="35" y="35" width="1130" height="830" fill="none" stroke="#0ea5e9" stroke-width="0.5"/>
+                
+                <text x="50" y="70" font-family="monospace" font-size="24" fill="#38bdf8" font-weight="bold">SECAD // ${desc}</text>
+                <text x="50" y="95" font-family="monospace" font-size="14" fill="#94a3b8">PROJECTION: 3RD ANGLE | SCALE: 1:1 | UNITS: MM</text>
+                
+                <!-- Top View -->
+                <g transform="translate(300, 350)">
+                    <line x1="-220" y1="0" x2="220" y2="0" stroke="#f43f5e" stroke-width="1" stroke-dasharray="20,5,5,5"/>
+                    <line x1="0" y1="-220" x2="0" y2="220" stroke="#f43f5e" stroke-width="1" stroke-dasharray="20,5,5,5"/>
+                    <circle cx="0" cy="0" r="150" fill="none" stroke="#e2e8f0" stroke-width="3"/>
+                    <circle cx="0" cy="0" r="100" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="10,5"/>
+                    <circle cx="0" cy="0" r="60" fill="none" stroke="#e2e8f0" stroke-width="3"/>
+                    <circle cx="0" cy="-100" r="15" fill="none" stroke="#e2e8f0" stroke-width="2"/>
+                    <circle cx="0" cy="100" r="15" fill="none" stroke="#e2e8f0" stroke-width="2"/>
+                    <circle cx="-100" cy="0" r="15" fill="none" stroke="#e2e8f0" stroke-width="2"/>
+                    <circle cx="100" cy="0" r="15" fill="none" stroke="#e2e8f0" stroke-width="2"/>
+                    <line x1="160" y1="0" x2="220" y2="0" stroke="#475569" stroke-width="1"/>
+                    <line x1="200" y1="0" x2="200" y2="-150" stroke="#94a3b8" stroke-width="1"/>
+                    <polygon points="200,-150 196,-135 204,-135" fill="#94a3b8"/>
+                    <text x="210" y="-75" font-family="monospace" font-size="14" fill="#cbd5e1" text-anchor="start">R150</text>
+                </g>
+
+                <!-- Front View -->
+                <g transform="translate(300, 700)">
+                    <line x1="-200" y1="0" x2="200" y2="0" stroke="#f43f5e" stroke-width="1" stroke-dasharray="20,5,5,5"/>
+                    <rect x="-150" y="-30" width="300" height="30" fill="none" stroke="#e2e8f0" stroke-width="3"/>
+                    <rect x="-80" y="-60" width="160" height="30" fill="none" stroke="#e2e8f0" stroke-width="3"/>
+                    <line x1="-60" y1="-60" x2="-60" y2="0" stroke="#94a3b8" stroke-width="2" stroke-dasharray="8,4"/>
+                    <line x1="60" y1="-60" x2="60" y2="0" stroke="#94a3b8" stroke-width="2" stroke-dasharray="8,4"/>
+                    <line x1="-100" y1="-30" x2="-100" y2="0" stroke="#94a3b8" stroke-width="2" stroke-dasharray="8,4"/>
+                    <line x1="100" y1="-30" x2="100" y2="0" stroke="#94a3b8" stroke-width="2" stroke-dasharray="8,4"/>
+                    <line x1="-150" y1="20" x2="-150" y2="50" stroke="#475569" stroke-width="1"/>
+                    <line x1="150" y1="20" x2="150" y2="50" stroke="#475569" stroke-width="1"/>
+                    <line x1="-150" y1="40" x2="150" y2="40" stroke="#94a3b8" stroke-width="1"/>
+                    <polygon points="-150,40 -135,36 -135,44" fill="#94a3b8"/>
+                    <polygon points="150,40 135,36 135,44" fill="#94a3b8"/>
+                    <text x="0" y="35" font-family="monospace" font-size="14" fill="#cbd5e1" text-anchor="middle">300 (O.D)</text>
+                </g>
+
+                <!-- Isometric View -->
+                <g transform="translate(850, 450)">
+                    <text x="0" y="-180" font-family="monospace" font-size="18" fill="#38bdf8" text-anchor="middle" font-weight="bold">ISOMETRIC ANALYSIS</text>
+                    <g stroke="#0ea5e9" stroke-width="2" fill="none" filter="url(#glow)">
+                        <ellipse cx="0" cy="-50" rx="150" ry="60"/>
+                        <ellipse cx="0" cy="-20" rx="150" ry="60"/>
+                        <ellipse cx="0" cy="-80" rx="80" ry="32"/>
+                        <ellipse cx="0" cy="-50" rx="80" ry="32"/>
+                        <ellipse cx="0" cy="-50" rx="60" ry="24"/>
+                        <ellipse cx="0" cy="-20" rx="60" ry="24"/>
+                        <line x1="-150" y1="-50" x2="-150" y2="-20"/>
+                        <line x1="150" y1="-50" x2="150" y2="-20"/>
+                        <line x1="-80" y1="-80" x2="-80" y2="-50"/>
+                        <line x1="80" y1="-80" x2="80" y2="-50"/>
+                    </g>
+                </g>
+
+                <rect x="850" y="750" width="320" height="120" fill="none" stroke="#38bdf8" stroke-width="2"/>
+                <line x1="850" y1="790" x2="1170" y2="790" stroke="#38bdf8" stroke-width="1"/>
+                <line x1="850" y1="830" x2="1170" y2="830" stroke="#38bdf8" stroke-width="1"/>
+                <line x1="1010" y1="790" x2="1010" y2="870" stroke="#38bdf8" stroke-width="1"/>
+                
+                <text x="860" y="778" font-family="monospace" font-size="14" fill="#94a3b8">SYSTEM</text>
+                <text x="940" y="778" font-family="monospace" font-size="18" fill="#e2e8f0" font-weight="bold">SECAD PRO v2.0</text>
+                
+                <text x="860" y="818" font-family="monospace" font-size="14" fill="#94a3b8">DATE</text>
+                <text x="930" y="818" font-family="monospace" font-size="14" fill="#e2e8f0">${dateStr}</text>
+                
+                <text x="1020" y="818" font-family="monospace" font-size="14" fill="#94a3b8">STATUS</text>
+                <text x="1080" y="818" font-family="monospace" font-size="14" fill="#10b981" font-weight="bold">VERIFIED</text>
+            </svg>
+            `;
+            
+            svgContainer.innerHTML = secadSVG;
+            generateBtn.innerText = "GENERATE BLUEPRINT";
+            generateBtn.style.background = "#0284c7";
+
+            // [규칙 적용] 도면 렌더링과 동시에 [넘버링]된 파일로 강제 자동 저장
+            const fileNum = String(fileCounter).padStart(3, '0');
+            const blob = new Blob([secadSVG], {type: "image/svg+xml"});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `[${fileNum}]_secad_generated.svg`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            fileCounter++; // 다음 생성을 위해 넘버링 증가
+
+        }, 1000); 
+    });
+</script>
+</body>
+</html>

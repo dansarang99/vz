@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>SECAD — 도면174 평면도 (동심원 수정)</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#ddd;font-family:'Malgun Gothic',sans-serif;padding:20px;display:flex;flex-direction:column;align-items:center}
+h2{font-size:14px;margin-bottom:10px;color:#333}
+.sheet{background:#fff;border:2px solid #000;padding:20px;position:relative}
+canvas{display:block}
+</style>
+</head>
+<body>
+<h2>연습도면 174 — 평면도 ([004] 뼈대 + 좌측 끝단 동심원 마감 수정)</h2>
+<div class="sheet">
+<canvas id="cv" width="600" height="400"></canvas>
+</div>
+
+<script>
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const S = 3; // 1mm = 3px (확대)
+
+// ── 치수 ──
+const L = 150, W = 82;
+const MargY = (W - 40) / 2; // 21mm
+const RibT = 10, Gap = 20;
+
+// Y 좌표들 (위에서부터)
+const y1 = MargY;           // 21 (상단 리브 위)
+const y2 = MargY + RibT;    // 31 (상단 리브 아래)
+const y3 = MargY + RibT + Gap; // 51 (하단 리브 위)
+const y4 = MargY + RibT * 2 + Gap; // 61 (하단 리브 아래)
+
+// 보강대(리브)의 정중앙 Y좌표 (구멍과 마감의 중심점)
+const cy1 = y1 + RibT/2; // 26
+const cy2 = y3 + RibT/2; // 56
+
+// X 좌표들
+const xL = 0, xR = L;
+const WingR = 15;
+const WingCx = 15; // 반원 및 구멍의 X 중심
+const BossCx = 129; 
+const Hole30x = L - 30; // 120
+const Hole60x = L - 30 - 60; // 60
+
+// ── 원점 ──
+const OX = 75, OY = 75; 
+const p=(x,y)=>[OX+x*S, OY+y*S];
+
+// ── 그리기 유틸 ──
+function O(lw=1.5,col='#000'){ctx.lineWidth=lw;ctx.strokeStyle=col;ctx.setLineDash([]);}
+function CL(){ctx.lineWidth=0.7;ctx.strokeStyle='#c00';ctx.setLineDash([8,3,2,3]);}
+function HD(){ctx.lineWidth=1;ctx.strokeStyle='#444';ctx.setLineDash([4,3]);}
+function Dim(){ctx.lineWidth=0.7;ctx.strokeStyle='#000';ctx.setLineDash([]);ctx.font='11px Arial';ctx.fillStyle='#000';}
+
+const line=(x1,y1,x2,y2)=>{ctx.beginPath();ctx.moveTo(...p(x1,y1));ctx.lineTo(...p(x2,y2));ctx.stroke();}
+const circ=(x,y,r)=>{ctx.beginPath();ctx.arc(...p(x,y), r*S, 0, Math.PI*2);ctx.stroke();}
+const arc=(x,y,r,a1,a2,cw=false)=>{ctx.beginPath();ctx.arc(...p(x,y), r*S, a1, a2, cw);ctx.stroke();}
+
+// [1] 베이스 외곽
+O(2);
+ctx.beginPath();ctx.rect(...p(0,0), L*S, W*S);ctx.stroke();
+
+// [2] 중앙 리브 수평선 (폭 10mm 띠 유지)
+O(1.5);
+line(WingCx, y1, xR, y1);
+line(WingCx, y2, xR, y2);
+line(WingCx, y3, xR, y3);
+line(WingCx, y4, xR, y4);
+
+// [3] 우측 보스 (R21) 투영
+O(1.5);
+line(BossCx - 21, y1, BossCx - 21, y2);
+line(BossCx + 21, y1, BossCx + 21, y2);
+line(BossCx - 21, y3, BossCx - 21, y4);
+line(BossCx + 21, y3, BossCx + 21, y4);
+CL();
+line(BossCx, y1-5, BossCx, y2+5);
+line(BossCx, y3-5, BossCx, y4+5);
+HD(); // 2-φ16 구멍
+line(BossCx - 8, y1, BossCx - 8, y2);
+line(BossCx + 8, y1, BossCx + 8, y2);
+line(BossCx - 8, y3, BossCx - 8, y4);
+line(BossCx + 8, y3, BossCx + 8, y4);
+
+// ──────────────────────────────────────────
+// [4] 좌측 끝단 수정 (동심원 완벽 정렬)
+// ──────────────────────────────────────────
+O(1.5);
+
+// 상단 끝단 (중심: 15, 26)
+// R15 반원 (좌측 절반)
+arc(WingCx, cy1, WingR, Math.PI/2, Math.PI*1.5, false);
+// 반원 끝단과 10mm 리브를 잇는 수직 마감선
+line(WingCx, cy1 - WingR, WingCx, y1); // 상단(Y=11)에서 리브위(Y=21)로 연결
+line(WingCx, cy1 + WingR, WingCx, y2); // 하단(Y=41)에서 리브아래(Y=31)로 연결
+
+// 하단 끝단 (중심: 15, 56)
+// R15 반원 (좌측 절반)
+arc(WingCx, cy2, WingR, Math.PI/2, Math.PI*1.5, false);
+// 반원 끝단과 10mm 리브를 잇는 수직 마감선
+line(WingCx, cy2 - WingR, WingCx, y3); // 상단(Y=41)에서 리브위(Y=51)로 연결
+line(WingCx, cy2 + WingR, WingCx, y4); // 하단(Y=71)에서 리브아래(Y=61)로 연결
+
+// 2-φ10 구멍 (R15 반원과 완벽한 동심원)
+circ(WingCx, cy1, 5); // 상단 중심
+circ(WingCx, cy2, 5); // 하단 중심
+
+// 끝단 중심선
+CL();
+line(WingCx-8, cy1, WingCx+8, cy1);
+line(WingCx, cy1-18, WingCx, cy1+18);
+line(WingCx-8, cy2, WingCx+8, cy2);
+line(WingCx, cy2-18, WingCx, cy2+18);
+// ──────────────────────────────────────────
+
+// [5] 바닥판 볼트홀 4-φ11
+O(1.5);
+circ(Hole60x, 10.5, 5.5);
+circ(Hole30x, 10.5, 5.5);
+circ(Hole60x, W - 10.5, 5.5);
+circ(Hole30x, W - 10.5, 5.5);
+
+CL();
+[Hole60x, Hole30x].forEach(x => {
+  line(x-8, 10.5, x+8, 10.5); line(x, 10.5-8, x, 10.5+8);
+  line(x-8, W-10.5, x+8, W-10.5); line(x, W-10.5-8, x, W-10.5+8);
+});
+
+// 전체 대칭 중심선
+CL();
+line(-10, W/2, L+10, W/2);
+
+// ── 치수 표시 ──
+Dim();
+line(0, -5, 0, -25); line(L, -5, L, -25);
+line(0, -20, L, -20);
+ctx.fillText("150", ...p(L/2, -26));
+line(L+5, 0, L+25, 0); line(L+5, W, L+25, W);
+line(L+20, 0, L+20, W);
+ctx.fillText("82", ...p(L+25, W/2));
+line(Hole60x, W+5, Hole60x, W+25);
+line(Hole30x, W+5, Hole30x, W+25);
+line(L, W+5, L, W+25);
+line(Hole60x, W+20, L, W+20);
+ctx.fillText("60", ...p((Hole60x+Hole30x)/2, W+14));
+ctx.fillText("30", ...p((Hole30x+L)/2, W+14));
+
+</script>
+</body>
+</html>

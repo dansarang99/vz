@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>SECAD — 도면174 형상검증 v3 (치수없음)</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#ddd;font-family:'Malgun Gothic',sans-serif;padding:20px;display:flex;flex-direction:column;align-items:center}
+h2{font-size:13px;margin-bottom:8px;color:#333}
+.sheet{background:#fff;border:2px solid #000;position:relative}
+canvas{display:block}
+.labels{position:absolute;pointer-events:none}
+</style>
+</head>
+<body>
+<h2>연습도면 174 — 3각법 형상 검증 v3 (치수없음, 형상집중)</h2>
+<div class="sheet" style="width:900px">
+<canvas id="cv" width="900" height="680"></canvas>
+</div>
+
+<script>
+/*
+ ═══════════════════════════════════════════════════
+  [확정 치수] 사용자 검증 기준
+  - L = 150  (전체 길이)
+  - W = 82   (전체 깊이)
+  - H = 96   (전체 높이) = BT(10) + RibH(65) + BossR(21)
+  - BT = 10  (베이스 두께)
+  - BossR = 21, BossCenterY = 75 (=96-21)
+  - RibX1=55, RibX2=95 (리브 외측 경계, 폭=40)
+  - 각 rib 두께=10: 판1 x=55~65, 판2 x=85~95
+  - 간격=20: x=65~85
+  - 보스 중심 x: cx1=65, cx2=85 (각 리브 내측면)
+  - 날개(Wing): 좌측, 높이 25(베이스위), R15 코너
+  - WingH = 25, WingR = 15
+  - 우측 계단: 베이스 우측에 높이=45 받침대
+    (우단 x=150 쪽에 y=10~45 범위 돌출부)
+    → 오른쪽 치수: 45=받침대, 10=base, 75+21=96 총높이
+  
+  [형상 분석 - 3D 등각도 기준]
+  정면(FRONT): 150 넓이, 96 높이
+    - 베이스: 150×10
+    - 리브 두 판: 각 x[55-65], x[85-95], y[10-75]
+    - 보스: R21 각 x=[65,85], y=75
+    - 우측 받침대: x[130-150], y[10-45]  ← 새 발견
+    - 좌날개: x[0-55], y[10-35(=10+25)]
+  우측면(RIGHT): W=82 깊이, 96 높이
+    - 단면 프로파일
+  평면(TOP): L=150, W=82 에서 위에서 본 형상
+ ═══════════════════════════════════════════════════
+*/
+
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const S = 1.8; // 1mm = 1.8px (1:1.8 척도, 화면에 맞게)
+
+// ── 치수 (mm)
+const L=150, W=82, H=96;
+const BT=10;            // 베이스 두께
+const BossR=21;         // 보스 반지름
+const BossCY=75;        // 보스 중심 y (=H-BossR=96-21)
+const RibX1=55,RibX2=95; // 리브 외측 경계
+const B1x1=55,B1x2=65; // 판1 (좌)
+const B2x1=85,B2x2=95; // 판2 (우)
+const Boss1cx=65, Boss2cx=85; // 보스 중심 x
+const WingH=25;         // 좌측 날개 높이 (베이스 상면 기준)
+const WingR=15;         // 날개 R
+const StepX=130;        // 우측 받침대 시작 x (추정: 150-20)
+const StepH=45;         // 우측 받침대 높이 (y=10~55? 아니면 10~45)
+                        // 원본 "45"는 base bottom~step top = 45mm
+// ── 그리기 유틸리티
+function O(lw=1.5,col='#000',dash=[]){
+  ctx.lineWidth=lw;ctx.strokeStyle=col;ctx.setLineDash(dash);
+}
+function CL(){O(0.6,'#cc0000',[9,3,2,3]);}// 중심선
+function HD(){O(0.7,'#444',[5,3]);}       // 숨은선
+function OL(){O(1.5,'#000',[]);}          // 외형선
+function SL(){O(1.0,'#000',[]);}          // 실선(보조)
+
+const line=(x1,y1,x2,y2)=>{ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}
+const circ=(cx,cy,r)=>{ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();}
+const arc=(cx,cy,r,a1,a2,cw=false)=>{ctx.beginPath();ctx.arc(cx,cy,r,a1,a2,cw);ctx.stroke();}
+
+// ══════════════════════════════════════════════
+//  뷰 설정
+//  정면도 원점 (좌하단): 화면 (FX, FY)
+//  평면도 원점 (정면도 위): 화면 (TX, TY) = 정면도 좌상단 위
+//  우측면도 원점 (정면도 우측): (RX, RY)
+// ══════════════════════════════════════════════
+
+const GAP=40; // 뷰 간 간격 (px)
+
+// 정면도: 하단 중앙 배치
+const FX = 60;
+const FY = 60 + H*S + GAP + W*S + GAP; // 화면 아래쪽에 배치 → y 위로 증가
+
+// 실제 배치: 평면도(위) - 간격 - 정면도 - 간격 - (측면도 우측)
+// y는 Canvas에서 아래로 증가하므로:
+// 평면도 상단: py_top
+// 정면도 하단: fy_bottom
+
+const fy_bottom = 640; // 정면도 하단 픽셀
+const tx_left   = 60;  // 좌측 여백
+
+// 정면도 변환: f(x_mm, y_mm) → 화면 px (y_mm: 0=바닥)
+const f=(x,y)=>[tx_left+x*S, fy_bottom-y*S];
+
+// 평면도 변환: t(x_mm, d_mm) (d: 깊이, 0=앞 정면 기준)
+// 평면도는 정면도 위쪽, y_mm 증가 = 화면 위쪽
+const ty_bottom = fy_bottom - H*S - GAP; // 평면도 하단 = 정면도 위 + 간격
+const tv=(x,d)=>[tx_left+x*S, ty_bottom-d*S];
+
+// 우측면도 변환: r(d_mm, y_mm) (d: 깊이, 0=앞면)
+const rx_left = tx_left + L*S + GAP;
+const rv=(d,y)=>[rx_left+d*S, fy_bottom-y*S];
+
+// ══════════════════════════════
+//  A. 정면도 (FRONT VIEW)
+// ══════════════════════════════
+
+// [1] 베이스 외곽 (150×10)
+OL();
+ctx.beginPath();
+ctx.moveTo(...f(0,0));
+ctx.lineTo(...f(L,0));
+ctx.lineTo(...f(L,BT));
+ctx.lineTo(...f(0,BT));
+ctx.closePath();
+ctx.stroke();
+
+// [2] 좌측 날개 (Wing): x=0~RibX1, y=BT~BT+WingH
+//   → 코너 R15로 리브와 연결
+OL();
+ctx.beginPath();
+ctx.moveTo(...f(0,BT));
+ctx.lineTo(...f(0,BT+WingH));     // 날개 좌측 수직
+// R15 코너 (우상단 코너)
+ctx.arcTo(...f(0,BT+WingH+WingR),...f(WingR,BT+WingH+WingR),WingR*S);
+ctx.lineTo(...f(RibX1,BT));       // 날개 경사 (R15 끝~리브시작)
+// → 실제론 직선으로 경사 없이 R15 후 리브에 접함
+// 간략화: 직각 코너 처리
+ctx.stroke();
+
+// 날개 상단 수평선 (부분)
+SL();
+ctx.beginPath();
+ctx.moveTo(...f(0,BT+WingH));
+// WingR까지 이어지다 호로 전환 (위에서 이미 처리)
+ctx.stroke();
+
+// [3] 우측 계단 받침대: x=StepX~L, y=BT~StepH
+//   (원본에서 우측에 낮은 계단 보임)
+OL();
+ctx.beginPath();
+ctx.moveTo(...f(StepX,BT));
+ctx.lineTo(...f(StepX,StepH));    // 계단 좌측 수직
+ctx.lineTo(...f(L,StepH));        // 계단 상단
+// f(L,StepH) → f(L,BT) 는 이미 베이스에 포함
+ctx.stroke();
+
+// [4] 리브 판1 (x=55~65, y=BT~BossCY)
+OL();
+ctx.beginPath();
+ctx.moveTo(...f(B1x1,BT)); ctx.lineTo(...f(B1x1,BossCY)); // 좌측 수직
+ctx.moveTo(...f(B1x2,BT)); ctx.lineTo(...f(B1x2,BossCY)); // 우측 수직 (내면)
+ctx.stroke();
+
+// [5] 리브 판2 (x=85~95, y=BT~BossCY)
+OL();
+ctx.beginPath();
+ctx.moveTo(...f(B2x1,BT)); ctx.lineTo(...f(B2x1,BossCY)); // 좌측 수직 (내면)
+ctx.moveTo(...f(B2x2,BT)); ctx.lineTo(...f(B2x2,BossCY)); // 우측 수직
+ctx.stroke();
+
+// [6] 보스 1 (center x=65, y=75, R=21) — 상반원
+OL();
+arc(...f(Boss1cx,BossCY),BossR*S, Math.PI,0); // 위쪽 반원
+
+// [7] 보스 2 (center x=85, y=75, R=21) — 상반원
+arc(...f(Boss2cx,BossCY),BossR*S, Math.PI,0);
+
+// 보스 좌우 연결 수직선 (보스 하단에서 리브까지)
+SL();
+line(...f(Boss1cx-BossR,BossCY),...f(B1x1,BossCY)); // 보스1 좌측 수직 연결
+line(...f(Boss2cx+BossR,BossCY),...f(B2x2,BossCY)); // 보스2 우측 수직 연결
+// 보스 사이 상단 수평선 (두 보스 내측)
+line(...f(Boss1cx,BossCY),...f(Boss2cx,BossCY));    // 보스 중심 연결선 (숨은? 보임)
+
+// 보스 하단 수평선 (리브 상단)
+line(...f(B1x1,BossCY),...f(B2x2,BossCY));
+
+// [8] φ16 구멍 (보스 중심에 원)
+SL();
+circ(...f(Boss1cx,BossCY),8*S);
+circ(...f(Boss2cx,BossCY),8*S);
+
+// [9] 숨은선: 베이스 볼트홀
+HD();
+line(...f(15,-1),...f(15,BT+1));
+line(...f(L-15,-1),...f(L-15,BT+1));
+
+// [10] 중심선
+CL();
+line(...f(Boss1cx,-8),...f(Boss1cx,H+5));
+line(...f(Boss2cx,-8),...f(Boss2cx,H+5));
+line(...f(B1x1-5,BossCY),...f(B2x2+5,BossCY));
+// 날개 φ10 중심선
+line(...f(10,-5),...f(10,BT+WingH+20));
+ctx.setLineDash([]);
+
+// 정면도 라벨
+ctx.save();ctx.font='bold 11px Malgun Gothic';ctx.fillStyle='#333';
+ctx.textAlign='center';
+ctx.fillText('[ 정면도 (FRONT VIEW) ]',tx_left+L*S/2,fy_bottom+18);
+ctx.restore();
+
+// ══════════════════════════════
+//  B. 평면도 (TOP VIEW)
+//     정면도 위쪽, 3각법: 앞=아래
+// ══════════════════════════════
+
+// 베이스 외곽 150×82
+OL();
+ctx.beginPath();
+ctx.moveTo(...tv(0,0));ctx.lineTo(...tv(L,0));
+ctx.lineTo(...tv(L,W));ctx.lineTo(...tv(0,W));
+ctx.closePath();ctx.stroke();
+
+// 리브 위치 (평면 투영: 세로선)
+SL();
+line(...tv(B1x1,0),...tv(B1x1,W));
+line(...tv(B1x2,0),...tv(B1x2,W));
+line(...tv(B2x1,0),...tv(B2x1,W));
+line(...tv(B2x2,0),...tv(B2x2,W));
+
+// 우측 계단
+SL();
+line(...tv(StepX,0),...tv(StepX,W));
+
+// 보스 원 (평면에서 원으로 보임)
+OL();
+circ(...tv(Boss1cx,W/2),BossR*S);
+circ(...tv(Boss2cx,W/2),BossR*S);
+// 구멍
+SL();
+circ(...tv(Boss1cx,W/2),8*S);
+circ(...tv(Boss2cx,W/2),8*S);
+
+// 4-φ11 볼트홀
+const bh=[{x:15,d:15},{x:15,d:W-15},{x:L-15,d:15},{x:L-15,d:W-15}];
+bh.forEach(h=>{
+  OL();circ(...tv(h.x,h.d),5.5*S);
+  CL();
+  line(...tv(h.x-9,h.d),...tv(h.x+9,h.d));
+  line(...tv(h.x,h.d-9),...tv(h.x,h.d+9));
+});
+ctx.setLineDash([]);
+
+// 중심 φ11 (평면 중앙 하단 구멍)
+OL();circ(...tv(75,W-20),5.5*S);
+CL();
+line(...tv(75-9,W-20),...tv(75+9,W-20));
+line(...tv(75,W-20-9),...tv(75,W-20+9));
+ctx.setLineDash([]);
+
+// 2-φ10 (좌측 날개 구멍)
+OL();
+circ(...tv(10,W*0.35),5*S);
+circ(...tv(10,W*0.65),5*S);
+
+// 중심선
+CL();
+line(...tv(Boss1cx,-8),...tv(Boss1cx,W+8));
+line(...tv(Boss2cx,-8),...tv(Boss2cx,W+8));
+line(...tv(-8,W/2),...tv(L+8,W/2));
+ctx.setLineDash([]);
+
+// 평면도 라벨
+ctx.save();ctx.font='bold 11px Malgun Gothic';ctx.fillStyle='#333';
+ctx.textAlign='center';
+ctx.fillText('[ 평면도 (TOP VIEW) ]',tx_left+L*S/2,ty_bottom-W*S-12);
+ctx.restore();
+
+// ══════════════════════════════
+//  C. 우측면도 (RIGHT SIDE VIEW)
+//     정면도 우측, 3각법
+// ══════════════════════════════
+
+// 우측면도에서 보이는 형상:
+// x축=깊이(W=82), y축=높이(H=96)
+// 앞면(d=0)이 왼쪽, 뒷면(d=82)이 오른쪽
+
+// 베이스 외곽
+OL();
+ctx.beginPath();
+ctx.moveTo(...rv(0,0));ctx.lineTo(...rv(W,0));
+ctx.lineTo(...rv(W,BT));ctx.lineTo(...rv(0,BT));
+ctx.closePath();ctx.stroke();
+
+// 우측 계단 (정면도의 x=130~150 영역이 측면에서는 뒤쪽 지점에 해당)
+// 우측면도에서: 계단은 깊이 방향으로 일부 영역에만 있음
+// 3D상 계단이 뒷면(d=W쪽)에 있다면:
+SL();
+ctx.beginPath();
+ctx.moveTo(...rv(W-20,BT));ctx.lineTo(...rv(W-20,StepH));
+ctx.lineTo(...rv(W,StepH));
+ctx.stroke();
+
+// 리브 측면 (우측면도에서 리브는 깊이 W 전체에 걸쳐 있음)
+// 리브 프로파일: y=BT~BossCY 수직, 상단 보스 반원
+OL();
+// 리브 좌측면 (d=0 쪽)
+ctx.beginPath();
+ctx.moveTo(...rv(0,BT));
+ctx.lineTo(...rv(0,BossCY));
+// 보스 반원 (측면에서: 두 보스가 겹쳐 하나로 보임, 가장 외측 R21)
+ctx.arc(...rv(0,BossCY),BossR*S,-Math.PI/2,Math.PI/2,true);
+ctx.lineTo(...rv(0,BT));
+// 측면에서는 실제로 리브가 깊이 방향으로 연장됨
+// 단순화: 프로파일선만
+ctx.stroke();
+
+// 리브 우측면 (d=W 쪽, 숨은선)
+HD();
+ctx.beginPath();
+ctx.moveTo(...rv(W,BT));ctx.lineTo(...rv(W,BossCY));
+ctx.arc(...rv(W,BossCY),BossR*S,-Math.PI/2,Math.PI/2,false);
+ctx.stroke();
+
+// 날개 측면 프로파일
+OL();
+ctx.beginPath();
+ctx.moveTo(...rv(0,BT));
+ctx.lineTo(...rv(0,BT+WingH));
+// R15 코너
+ctx.arcTo(...rv(0,BT+WingH+WingR),...rv(WingR,BT+WingH+WingR),WingR*S);
+ctx.lineTo(...rv(W,BT));
+// 실제론 날개가 좌측에서만 존재 → 측면도에서는 전체 깊이로 보임
+ctx.stroke();
+
+// 숨은선: 볼트홀
+HD();
+line(...rv(15,-1),...rv(15,BT+1));
+line(...rv(W-15,-1),...rv(W-15,BT+1));
+
+// 중심선
+CL();
+line(...rv(-8,BossCY),...rv(W+8,BossCY));
+line(...rv(W/2,-8),...rv(W/2,H+5));
+ctx.setLineDash([]);
+
+// 우측면도 라벨
+ctx.save();ctx.font='bold 11px Malgun Gothic';ctx.fillStyle='#333';
+ctx.textAlign='center';
+ctx.fillText('[ 우측면도 (RIGHT VIEW) ]',rx_left+W*S/2,fy_bottom+18);
+ctx.restore();
+
+// ══════════════════════════════
+//  투상선 (Projection Lines)
+//  3각법 연결선
+// ══════════════════════════════
+ctx.save();ctx.setLineDash([3,6]);ctx.strokeStyle='#999';ctx.lineWidth=0.5;
+
+// 정면 → 평면 수직 투상선
+[0,B1x1,B1x2,B2x1,B2x2,Boss1cx,Boss2cx,L].forEach(x=>{
+  ctx.beginPath();
+  ctx.moveTo(...f(x,H));
+  ctx.lineTo(...tv(x,0));
+  ctx.stroke();
+});
+
+// 정면 → 우측면 수평 투상선
+[0,BT,BossCY,StepH,BT+WingH,H].forEach(y=>{
+  ctx.beginPath();
+  ctx.moveTo(...f(L,y));
+  ctx.lineTo(...rv(0,y));
+  ctx.stroke();
+});
+
+ctx.restore();
+
+// ══════════════════════════════
+//  범례
+// ══════════════════════════════
+const LGX=rx_left+W*S+30, LGY=200;
+ctx.save();
+ctx.font='bold 11px Malgun Gothic';ctx.fillStyle='#000';ctx.setLineDash([]);
+ctx.fillText('범 례',LGX,LGY);
+
+OL();line(LGX,LGY+16,LGX+35,LGY+16);
+ctx.font='10px Arial';ctx.fillStyle='#000';ctx.fillText('외형선',LGX+38,LGY+19);
+
+CL();line(LGX,LGY+32,LGX+35,LGY+32);
+ctx.fillStyle='#cc0000';ctx.fillText('중심선',LGX+38,LGY+35);
+
+HD();line(LGX,LGY+48,LGX+35,LGY+48);
+ctx.fillStyle='#444';ctx.fillText('숨은선',LGX+38,LGY+51);
+ctx.setLineDash([]);
+
+// ── 뷰 레이블 선
+ctx.strokeStyle='#bbb';ctx.lineWidth=0.5;
+// 정면도 경계 박스
+ctx.strokeRect(...f(0,H),L*S,-H*S);
+// 평면도 경계 박스
+ctx.strokeRect(...tv(0,W),L*S,-W*S);
+// 측면도 경계 박스
+ctx.strokeRect(...rv(0,H),W*S,-H*S);
+
+// 도면 경계
+ctx.strokeStyle='#000';ctx.lineWidth=2;ctx.setLineDash([]);
+ctx.strokeRect(4,4,892,672);
+
+// 제목
+ctx.font='10px Malgun Gothic';ctx.fillStyle='#888';ctx.textAlign='left';
+ctx.fillText('SECAD v1.0  |  도면174 형상검증 v3  |  3각법  |  치수없음  |  1:1.8',10,670);
+ctx.restore();
+</script>
+</body>
+</html>

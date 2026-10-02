@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SECAD Drawing 174 - L-Shape Foundation</title>
+    <style>
+        body { margin: 0; background-color: #0f172a; color: #fff; font-family: monospace; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        svg { background-color: #1e293b; border: 1px solid #334155; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        
+        /* 제1단면: 가장 핵심이 되는 ㄴ자. 굵고 선명하게 */
+        .layer1-l-shape { fill: #1e40af; stroke: #60a5fa; stroke-width: 4; stroke-linejoin: round; }
+        
+        /* 제2/3단면: ㄴ자 위에 얹어지는 부속 */
+        .layer2-rest { fill: #1e293b; stroke: #38bdf8; stroke-width: 3; stroke-linejoin: round; }
+        
+        /* 선, 은선, 중심선 */
+        .rib { fill: none; stroke: #38bdf8; stroke-width: 3; stroke-linecap: round; }
+        .hidden { fill: none; stroke: #94a3b8; stroke-width: 2; stroke-dasharray: 6,4; }
+        .center { fill: none; stroke: #ef4444; stroke-width: 1.5; stroke-dasharray: 15,5,5,5; }
+        .grid { stroke: #334155; stroke-width: 0.5; }
+        .label { fill: #fcd34d; font-family: sans-serif; font-size: 14px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <svg width="800" height="600">
+        <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+            <path d="M 30 0 L 0 0 0 30" fill="none" class="grid"/>
+        </pattern>
+        <rect width="100%" height="100%" fill="url(#grid)" />
+        <text x="30" y="40" font-family="monospace" font-size="22" fill="#38bdf8">SECAD MASTER PIECE: LAYER 1 FOUNDATION</text>
+        <text x="30" y="65" font-family="monospace" font-size="14" fill="#fcd34d">DIRECTOR'S RULE: L-SHAPE MUST BE PERFECT FIRST</text>
+
+        <!-- 절대 픽셀 매핑 (배율 3배, 원점 X=50, Y=450, SVG Native Y-Down) -->
+        
+        <!-- ======================================================= -->
+        <!-- 제1단면 (Layer 1) : 오직 완벽한 ㄴ(니은)자만을 단독으로 그림 -->
+        <!-- ======================================================= -->
+        <!-- 
+             (50,450) 바닥 좌측에서 출발 -> (500,450) 바닥 우측 -> (500,225) 우측 기둥 꼭대기 
+             -> A 63(반지름21*3) 호를 위로 솟게(0) 그려서 (374,225)로 안착 
+             -> (374,420) ㄴ자 안쪽 코너로 내려옴 -> (50,420) 바닥 윗면 좌측 끝으로 평행 이동
+             -> (50,450) 원점으로 돌아와 닫음.
+        -->
+        <path d="
+            M 50,450 
+            L 500,450 
+            L 500,225 
+            A 63 63 0 0 0 374,225 
+            L 374,420 
+            L 50,420 
+            Z" 
+        class="layer1-l-shape" />
+
+        <text x="220" y="440" class="label">제1단면 (완벽한 ㄴ자 베이스)</text>
+
+
+        <!-- ======================================================= -->
+        <!-- 제2단면 (Layer 2) : ㄴ자 베이스 위에 얹히는 좌측 기둥 -->
+        <!-- ======================================================= -->
+        <!-- 
+             (50,420) ㄴ자 바닥 윗면에서 출발 -> (50,375) 위로 상승 
+             -> A 45(반지름15*3) 호를 위로 솟게(1) 그려서 (140,375)로 안착 
+             -> (140,420) 바닥으로 내려와 닫음.
+        -->
+        <path d="
+            M 50,420 
+            L 50,375 
+            A 45 45 0 0 1 140,375 
+            L 140,420 
+            Z" 
+        class="layer2-rest" />
+        
+        <text x="50" y="320" class="label">제2단면 (좌측 힌지)</text>
+
+
+        <!-- ======================================================= -->
+        <!-- 제3단면 (Layer 3) : 지지대 (Rib) -->
+        <!-- ======================================================= -->
+        <path d="M 95,330 L 374,225" class="rib" />
+        <text x="220" y="270" class="label">제3단면 (사선 지지대)</text>
+
+
+        <!-- 단면의 구멍 (정면 실선) -->
+        <circle cx="95" cy="375" r="15" class="layer2-rest" />  <!-- 좌측 귀 구멍 -->
+        <circle cx="437" cy="225" r="24" class="layer2-rest" /> <!-- 우측 귀 구멍 -->
+
+        <!-- 숨겨진 구멍 (바닥 4홀 은선) -->
+        <path d="M 213.5,450 L 213.5,420 M 246.5,450 L 246.5,420" class="hidden" /> <!-- 좌측 쌍 -->
+        <path d="M 393.5,450 L 393.5,420 M 426.5,450 L 426.5,420" class="hidden" /> <!-- 우측 쌍 -->
+
+        <!-- 중심선 (Center Lines) -->
+        <path d="M 30,375 L 160,375 M 95,310 L 95,470" class="center" /> <!-- 좌측 원 중심 -->
+        <path d="M 350,225 L 530,225 M 437,140 L 437,470" class="center" /> <!-- 우측 원 중심 -->
+        <path d="M 230,400 L 230,470 M 410,400 L 410,470" class="center" /> <!-- 바닥 홀 중심 -->
+
+    </svg>
+</body>
+</html>

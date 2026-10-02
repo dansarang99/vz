@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SECAD Drawing 174 - Engineering Front View</title>
+    <style>
+        body { margin: 0; background-color: #0f172a; color: #fff; font-family: monospace; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        svg { background-color: #1e293b; border: 1px solid #334155; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .outline { fill: none; stroke: #38bdf8; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+        .hidden { fill: none; stroke: #94a3b8; stroke-width: 1; stroke-dasharray: 4,3; }
+        .center { fill: none; stroke: #ef4444; stroke-width: 0.8; stroke-dasharray: 12,3,3,3; }
+        .text { fill: #10b981; font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 14px; font-weight: bold; }
+        .grid { stroke: #334155; stroke-width: 0.5; }
+        .coord-text { fill: #fcd34d; font-size: 5px; transform: scale(1, -1); }
+    </style>
+</head>
+<body>
+    <svg width="800" height="600">
+        <!-- Background Grid -->
+        <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" class="grid"/>
+        </pattern>
+        <rect width="100%" height="100%" fill="url(#grid)" />
+        <text x="20" y="40" font-family="monospace" font-size="20" fill="#38bdf8">ENGINEERING DRAFTING METHOD: FRONT VIEW</text>
+        <text x="20" y="60" font-family="monospace" font-size="12" fill="#94a3b8">ORIGIN (0,0) AT BOTTOM-LEFT | EXPLICIT COORDINATE MAPPING</text>
+
+        <!-- Cartesian Coordinate Space (Origin at bottom-left, Y points UP) -->
+        <g transform="translate(150, 450) scale(3, -3)">
+            
+            <!-- X and Y Axis Indicators -->
+            <path d="M 0,0 L 170,0 M 0,0 L 0,110" class="center" style="stroke: #fcd34d; stroke-dasharray: none;" />
+            <text x="2" y="5" class="coord-text" style="font-size:6px; fill:#ef4444;">(0,0)</text>
+
+            <!-- 1. BASE (1단 외곽선) -->
+            <!-- Bottom line -->
+            <path d="M 0,0 L 150,0" class="outline" />
+            <!-- Right line -->
+            <path d="M 150,0 L 150,10" class="outline" />
+            <!-- Base Top (between left and right columns) -->
+            <path d="M 30,10 L 108,10" class="outline" />
+
+            <!-- 2. LEFT EAR R15 (2단 외곽선 좌측) -->
+            <!-- Left vertical column (flush with X=0) -->
+            <path d="M 0,0 L 0,25" class="outline" />
+            <!-- Right vertical column of left ear -->
+            <path d="M 30,10 L 30,25" class="outline" />
+            <!-- Top Arc (Center 15,25 R15) -->
+            <path d="M 30,25 A 15 15 0 0 0 0,25" class="outline" />
+
+            <!-- 3. RIGHT EAR R21 (2단 외곽선 우측) -->
+            <!-- Left vertical column -->
+            <path d="M 108,10 L 108,75" class="outline" />
+            <!-- Right vertical column -->
+            <path d="M 150,10 L 150,75" class="outline" />
+            <!-- Top Arc (Center 129,75 R21) -->
+            <path d="M 150,75 A 21 21 0 0 0 108,75" class="outline" />
+
+            <!-- 4. DIAGONAL RIB (3단 외곽선 사선) -->
+            <!-- Connects inner vertical edges to avoid covering the outer curves -->
+            <path d="M 30,25 L 108,75" class="outline" />
+
+            <!-- 5. VISIBLE HOLES (실선 구멍) -->
+            <circle cx="15" cy="25" r="5" class="outline" />  <!-- Left Hole Phi 10 -->
+            <circle cx="129" cy="75" r="8" class="outline" /> <!-- Right Hole Phi 16 -->
+
+            <!-- 6. HIDDEN HOLES (은선 구멍 4개 - Base) -->
+            <!-- Base Hole 1 (X=60) -->
+            <path d="M 54.5,0 L 54.5,10 M 65.5,0 L 65.5,10" class="hidden" />
+            <!-- Base Hole 2 (X=120) -->
+            <path d="M 114.5,0 L 114.5,10 M 125.5,0 L 125.5,10" class="hidden" />
+
+            <!-- 7. CENTER LINES (중심선) -->
+            <path d="M 0,25 L 40,25 M 15,10 L 15,50" class="center" /> <!-- Left Ear -->
+            <path d="M 100,75 L 160,75 M 129,40 L 129,110" class="center" /> <!-- Right Ear -->
+            <path d="M 60,-5 L 60,15 M 120,-5 L 120,15" class="center" /> <!-- Base Holes -->
+
+            <!-- Data Labels for Clarity -->
+            <text x="30" y="-12" class="coord-text">Rib Start (30,25)</text>
+            <text x="108" y="-62" class="coord-text">Rib End (108,75)</text>
+        </g>
+    </svg>
+</body>
+</html>

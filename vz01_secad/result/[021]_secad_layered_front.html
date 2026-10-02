@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SECAD Drawing 174 - Perfect Layered Front View</title>
+    <style>
+        body { margin: 0; background-color: #0f172a; color: #fff; font-family: monospace; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        svg { background-color: #1e293b; border: 1px solid #334155; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        
+        /* 제1단면 전용 스타일: ㄴ자가 시각적으로 명확히 보이도록 살짝 색을 채움 */
+        .layer1-L-shape { fill: rgba(56, 189, 248, 0.15); stroke: #38bdf8; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        
+        /* 제2/3단면 전용 스타일 */
+        .layer2-rest { fill: none; stroke: #38bdf8; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        
+        .hidden { fill: none; stroke: #94a3b8; stroke-width: 1; stroke-dasharray: 4,3; }
+        .center { fill: none; stroke: #ef4444; stroke-width: 0.8; stroke-dasharray: 12,3,3,3; }
+        .grid { stroke: #334155; stroke-width: 0.5; }
+    </style>
+</head>
+<body>
+    <svg width="800" height="600">
+        <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" class="grid"/>
+        </pattern>
+        <rect width="100%" height="100%" fill="url(#grid)" />
+        <text x="20" y="40" font-family="monospace" font-size="20" fill="#38bdf8">SECAD PERFECT FRONT VIEW: LAYERED DRAFTING</text>
+        <text x="20" y="60" font-family="monospace" font-size="12" fill="#fcd34d">DIRECTOR'S METHOD: L-SHAPE (LAYER 1) FIRST, THEN LAYER 2 BEHIND</text>
+
+        <g transform="translate(150, 450) scale(3, -3)">
+            
+            <path d="M 0,0 L 170,0 M 0,0 L 0,110" class="center" style="stroke: #fcd34d; stroke-dasharray: none; opacity: 0.3;" />
+
+            <!-- ========================================== -->
+            <!-- 1. 제1단면: 완벽한 ㄴ(니은)자 (가장 앞쪽) -->
+            <!-- ========================================== -->
+            <!-- 설명: 
+                 바닥(0,0 -> 150,0)과 우측 기둥(150,75까지)을 그린 후,
+                 안쪽 코너(108,10)를 지나 맨 왼쪽(0,10)까지 닫힌 ㄴ자 형태를 완전히 독립적으로 그림. 
+            -->
+            <path id="Layer1" d="
+                M 0,0 
+                L 150,0 
+                L 150,75 
+                A 21 21 0 0 1 108,75 
+                L 108,10 
+                L 0,10 
+                Z" 
+            class="layer1-L-shape" />
+
+            <!-- ========================================== -->
+            <!-- 2. 제2단면: 좌측 기둥 (ㄴ자 뒤/위에 얹혀진 형태) -->
+            <!-- ========================================== -->
+            <!-- 설명: 
+                 ㄴ자의 윗면(Y=10)에서 출발하여 좌측 기둥을 독립적으로 그림. 
+            -->
+            <path id="Layer2" d="
+                M 0,10 
+                L 0,25 
+                A 15 15 0 0 1 30,25 
+                L 30,10" 
+            class="layer2-rest" />
+
+            <!-- ========================================== -->
+            <!-- 3. 제3단면: 지지대 (Rib) -->
+            <!-- ========================================== -->
+            <path d="M 15,40 L 108,75" class="layer2-rest" />
+
+            <!-- ========================================== -->
+            <!-- 4. 단면의 구멍 (정면 실선) -->
+            <!-- ========================================== -->
+            <circle cx="15" cy="25" r="5" class="layer2-rest" />  <!-- 좌측 귀 구멍 -->
+            <circle cx="129" cy="75" r="8" class="layer2-rest" /> <!-- 우측 귀 구멍 -->
+
+            <!-- ========================================== -->
+            <!-- 5. 숨겨진 형태 (바닥 4홀 은선) -->
+            <!-- ========================================== -->
+            <path d="M 54.5,0 L 54.5,10 M 65.5,0 L 65.5,10" class="hidden" />
+            <path d="M 114.5,0 L 114.5,10 M 125.5,0 L 125.5,10" class="hidden" />
+
+            <!-- ========================================== -->
+            <!-- 6. 중심선 (Center Lines) -->
+            <!-- ========================================== -->
+            <path d="M -5,25 L 40,25 M 15,10 L 15,50" class="center" /> 
+            <path d="M 100,75 L 160,75 M 129,40 L 129,110" class="center" />
+            <path d="M 60,-5 L 60,15 M 120,-5 L 120,15" class="center" />
+
+        </g>
+    </svg>
+</body>
+</html>

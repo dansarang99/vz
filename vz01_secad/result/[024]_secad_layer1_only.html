@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SECAD Drawing 174 - Layer 1 Only (Coordinate Verification)</title>
+    <style>
+        body { margin: 0; background-color: #0f172a; color: #fff; font-family: monospace; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        svg { background-color: #1e293b; border: 1px solid #334155; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        
+        .layer1-shape { fill: rgba(56, 189, 248, 0.2); stroke: #38bdf8; stroke-width: 4; stroke-linejoin: round; }
+        .point { fill: #ef4444; }
+        .coord-label { fill: #fcd34d; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 14px; font-weight: bold; }
+        .grid { stroke: #334155; stroke-width: 0.5; }
+    </style>
+</head>
+<body>
+    <svg width="800" height="600">
+        <!-- 배경 그리드 -->
+        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" class="grid"/>
+        </pattern>
+        <rect width="100%" height="100%" fill="url(#grid)" />
+        
+        <text x="20" y="40" font-family="monospace" font-size="24" fill="#38bdf8">SECAD 제1단면 (ㄴ자) 좌표 검증</text>
+        <text x="20" y="70" font-family="monospace" font-size="14" fill="#94a3b8">DIRECTOR'S CHECK: ONLY LAYER 1 WITH ABSOLUTE COORDINATES</text>
+
+        <!-- 
+             절대 픽셀 매핑 (Native Y-Down SVG)
+             Scale = 4배 확대
+             Origin (0,0) = SVG (40, 520)
+        -->
+        
+        <!-- 제1단면 L자 패스 -->
+        <path d="
+            M 40,520 
+            L 640,520 
+            L 640,220 
+            A 84 84 0 0 0 472,220 
+            L 472,480 
+            L 40,480 
+            Z" 
+        class="layer1-shape" />
+
+        <!-- 꼭짓점 1: (0,0) 바닥 좌측 -->
+        <circle cx="40" cy="520" r="6" class="point" />
+        <text x="10" y="545" class="coord-label">(0, 0)</text>
+
+        <!-- 꼭짓점 2: (150,0) 바닥 우측 -->
+        <circle cx="640" cy="520" r="6" class="point" />
+        <text x="610" y="545" class="coord-label">(150, 0)</text>
+
+        <!-- 꼭짓점 3: (150,75) 우측 기둥 외곽 -->
+        <circle cx="640" cy="220" r="6" class="point" />
+        <text x="655" y="225" class="coord-label">(150, 75)</text>
+
+        <!-- 꼭짓점 4: (108,75) 우측 기둥 안쪽 -->
+        <circle cx="472" cy="220" r="6" class="point" />
+        <text x="380" y="225" class="coord-label">(108, 75)</text>
+        
+        <!-- 반원 정수리: (129,96) 시각적 표시용 -->
+        <circle cx="556" cy="136" r="6" class="point" style="fill: #10b981;" />
+        <text x="520" y="120" class="coord-label" style="fill:#10b981;">(129, 96) 정수리</text>
+
+        <!-- 꼭짓점 5: (108,10) ㄴ자 안쪽 코너 -->
+        <circle cx="472" cy="480" r="6" class="point" />
+        <text x="475" y="495" class="coord-label">(108, 10)</text>
+
+        <!-- 꼭짓점 6: (0,10) 바닥 윗면 좌측 -->
+        <circle cx="40" cy="480" r="6" class="point" />
+        <text x="10" y="470" class="coord-label">(0, 10)</text>
+
+        <!-- 베이스 두께 치수선 보조 -->
+        <path d="M 15,520 L 25,520 M 15,480 L 25,480 M 20,520 L 20,480" stroke="#fcd34d" stroke-width="2" />
+        <text x="25" y="505" fill="#fcd34d" font-size="12">10</text>
+
+        <!-- 전체 길이 치수선 보조 -->
+        <path d="M 40,560 L 40,570 M 640,560 L 640,570 M 40,565 L 640,565" stroke="#fcd34d" stroke-width="2" />
+        <text x="320" y="560" fill="#fcd34d" font-size="12">150</text>
+    </svg>
+</body>
+</html>

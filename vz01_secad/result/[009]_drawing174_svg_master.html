@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>SECAD - SVG Vector CAD System</title>
+<style>
+  body { background: #2b2b2b; display: flex; justify-content: center; padding: 20px; font-family: 'Malgun Gothic', sans-serif; }
+  .sheet { background: #fff; width: 1000px; height: 750px; box-shadow: 0 0 20px rgba(0,0,0,0.5); position: relative; }
+  svg { width: 100%; height: 100%; }
+  /* KS 기계제도 선 규격 CSS */
+  .outline { fill: none; stroke: #000; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .hidden { fill: none; stroke: #000; stroke-width: 1; stroke-dasharray: 4, 3; }
+  .center { fill: none; stroke: #d32f2f; stroke-width: 0.7; stroke-dasharray: 12, 3, 3, 3; }
+  .dim-line { fill: none; stroke: #555; stroke-width: 0.7; }
+  .dim-text { fill: #333; font-size: 12px; font-family: Arial; text-anchor: middle; font-weight: bold; }
+  .title-block { fill: none; stroke: #000; stroke-width: 1.5; }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <!-- SVG CAD Canvas -->
+  <div id="svg-container"></div>
+</div>
+
+<script>
+// ── [1] SVG Micro-CAD Engine ──
+const S = 3; // 척도 (1mm = 3px)
+let svgHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 750">`;
+
+// 벡터 객체 생성기
+const L = (x1,y1,x2,y2,cls="outline") => `<line x1="${x1*S}" y1="${y1*S}" x2="${x2*S}" y2="${y2*S}" class="${cls}"/>`;
+const R = (x,y,w,h,cls="outline") => `<rect x="${x*S}" y="${y*S}" width="${w*S}" height="${h*S}" class="${cls}"/>`;
+const C = (x,y,r,cls="outline") => `<circle cx="${x*S}" cy="${y*S}" r="${r*S}" class="${cls}"/>`;
+const A = (cx,cy,r,sa,ea,cls="outline") => { // SVG Arc
+  const start = { x: cx + r * Math.cos(sa), y: cy + r * Math.sin(sa) };
+  const end   = { x: cx + r * Math.cos(ea), y: cy + r * Math.sin(ea) };
+  const largeArcFlag = ea - sa <= Math.PI ? "0" : "1";
+  return `<path d="M ${start.x*S} ${start.y*S} A ${r*S} ${r*S} 0 ${largeArcFlag} 1 ${end.x*S} ${end.y*S}" class="${cls}"/>`;
+};
+// 치수선 및 화살표 생성기 (AutoCAD 스타일)
+const Dim = (x1,y1,x2,y2,val, offset=15) => {
+  const dx = x2-x1, dy = y2-y1;
+  const len = Math.hypot(dx,dy);
+  const nx = -dy/len, ny = dx/len; // 법선 벡터
+  const px1 = x1 + nx*offset, py1 = y1 + ny*offset;
+  const px2 = x2 + nx*offset, py2 = y2 + ny*offset;
+  const tx = (px1+px2)/2 + nx*3, ty = (py1+py2)/2 + ny*3 + 4; // 텍스트 위치
+  
+  return `
+    ${L(x1,y1, px1 + nx*3, py1 + ny*3, "dim-line")} 
+    ${L(x2,y2, px2 + nx*3, py2 + ny*3, "dim-line")}
+    ${L(px1,py1, px2,py2, "dim-line")}
+    <polygon points="${px1*S},${py1*S} ${px1*S+nx*1.5*S+ny*3*S},${py1*S+ny*1.5*S-nx*3*S} ${px1*S-nx*1.5*S+ny*3*S},${py1*S-ny*1.5*S-nx*3*S}" fill="#555"/>
+    <polygon points="${px2*S},${py2*S} ${px2*S+nx*1.5*S-ny*3*S},${py2*S+ny*1.5*S+nx*3*S} ${px2*S-nx*1.5*S-ny*3*S},${py2*S-ny*1.5*S+nx*3*S}" fill="#555"/>
+    <text x="${tx*S}" y="${ty*S}" class="dim-text" transform="rotate(${Math.atan2(dy,dx)*180/Math.PI}, ${tx*S}, ${ty*S})">${val}</text>
+  `;
+};
+
+// ── [2] 원본 도면 파라미터 (단일 출처) ──
+const P = {
+  BaseL: 150, BaseW: 82, BaseH: 10,
+  PadW: 30, PadH: 25, PadR: 15,
+  RibT: 10, Gap: 20,
+  BossR: 21, BossH: 96, BossCx: 129,
+  HoleX_L: 15, HoleX_R1: 90, HoleX_R2: 150-30, // Base holes: X=120, X=60
+  PadY1: 16, PadY2: 66 // Pad centers in top view
+};
+const RibY1 = 21, RibY2 = 31, RibY3 = 51, RibY4 = 61; // Rib boundaries
+
+// 뷰 캔버스 원점 설정
+const View = { Top: {x:40, y:30}, Front: {x:40, y:140}, Right: {x:210, y:140} };
+const shift = (v, str) => `<g transform="translate(${v.x*S}, ${v.y*S})">${str}</g>`;
+
+// ── [3] 뷰별 기하학 드로잉 (Top, Front, Right) ──
+
+// 1. 평면도 (Top)
+let topG = `
+  ${R(0,0, P.BaseL, P.BaseW)}
+  ${L(P.HoleX_L, RibY1, P.BaseL, RibY1)} ${L(P.BossCx, RibY2, P.BaseL, RibY2)}
+  ${L(P.HoleX_L, RibY4, P.BaseL, RibY4)} ${L(P.BossCx, RibY3, P.BaseL, RibY3)}
+  ${A(P.HoleX_L, P.PadY1, P.PadR, Math.PI/2, Math.PI*1.5)}
+  ${A(P.HoleX_L, P.PadY2, P.PadR, Math.PI/2, Math.PI*1.5)}
+  ${L(P.HoleX_L, P.PadY1-P.PadR, P.BossCx, P.PadY1-P.PadR)}
+  ${L(P.HoleX_L, P.PadY2+P.PadR, P.BossCx, P.PadY2+P.PadR)}
+  ${L(P.BossCx, RibY2, P.BossCx, P.PadY1-P.PadR)}
+  ${L(P.BossCx, RibY3, P.BossCx, P.PadY2+P.PadR)}
+  
+  ${L(P.BossCx-P.BossR, RibY1, P.BossCx-P.BossR, RibY2)} ${L(P.BossCx+P.BossR, RibY1, P.BossCx+P.BossR, RibY2)}
+  ${L(P.BossCx-P.BossR, RibY3, P.BossCx-P.BossR, RibY4)} ${L(P.BossCx+P.BossR, RibY3, P.BossCx+P.BossR, RibY4)}
+  
+  ${C(P.HoleX_L, P.PadY1, 5)} ${C(P.HoleX_L, P.PadY2, 5)}
+  ${C(P.HoleX_R1, 10.5, 5.5)} ${C(P.HoleX_R2, 10.5, 5.5)}
+  ${C(P.HoleX_R1, P.BaseW-10.5, 5.5)} ${C(P.HoleX_R2, P.BaseW-10.5, 5.5)}
+  ${R(P.BossCx-8, RibY1, 16, P.RibT, "hidden")} ${R(P.BossCx-8, RibY3, 16, P.RibT, "hidden")}
+  
+  ${L(-10, P.BaseW/2, P.BaseL+10, P.BaseW/2, "center")}
+  ${L(P.HoleX_L, -5, P.HoleX_L, P.BaseW+5, "center")}
+  ${L(P.HoleX_R1, 0, P.HoleX_R1, P.BaseW, "center")} ${L(P.HoleX_R2, 0, P.HoleX_R2, P.BaseW, "center")}
+  ${L(P.BossCx, 0, P.BossCx, P.BaseW, "center")}
+`;
+
+// 2. 정면도 (Front)
+let frnY = P.BossH; // 96
+let frontG = `
+  <path d="M 0 ${frnY} L ${P.BaseL} ${frnY} L ${P.BaseL} ${frnY-P.BaseH} L ${P.BossCx+P.BossR} ${frnY-P.BaseH} A ${P.BossR} ${P.BossR} 0 0 0 ${P.BossCx-P.BossR} ${frnY-P.BossH} L ${P.HoleX_L+P.PadR} ${frnY-P.PadH} L 0 ${frnY-P.PadH} Z" class="outline"/>
+  ${L(0, frnY-P.BaseH, P.BaseL, frnY-P.BaseH)}
+  ${L(P.HoleX_L+P.PadR, frnY-P.PadH, P.HoleX_L+P.PadR, frnY-P.BaseH)}
+  ${C(P.BossCx, frnY-75, 8)}
+  
+  ${R(P.HoleX_L-5, frnY-P.PadH, 10, P.PadH, "hidden")}
+  ${R(P.HoleX_R1-5.5, frnY-P.BaseH, 11, P.BaseH, "hidden")}
+  ${R(P.HoleX_R2-5.5, frnY-P.BaseH, 11, P.BaseH, "hidden")}
+  
+  ${L(P.HoleX_L, frnY-P.PadH-5, P.HoleX_L, frnY+5, "center")}
+  ${L(P.HoleX_R1, frnY-P.BaseH-5, P.HoleX_R1, frnY+5, "center")}
+  ${L(P.HoleX_R2, frnY-P.BaseH-5, P.HoleX_R2, frnY+5, "center")}
+  ${L(P.BossCx, frnY-P.BossH-5, P.BossCx, frnY+5, "center")}
+  ${L(P.BossCx-15, frnY-75, P.BossCx+15, frnY-75, "center")}
+`;
+
+// 3. 우측면도 (Right)
+let rightG = `
+  ${R(0, frnY-P.BaseH, P.BaseW, P.BaseH)}
+  ${R(RibY1, frnY-P.BossH+P.BossR, P.RibT, P.BossH-P.BaseH-P.BossR)}
+  ${R(RibY3, frnY-P.BossH+P.BossR, P.RibT, P.BossH-P.BaseH-P.BossR)}
+  ${A(RibY1+P.RibT/2, frnY-75, P.BossR, Math.PI, 0)}
+  ${A(RibY3+P.RibT/2, frnY-75, P.BossR, Math.PI, 0)}
+  
+  ${L(0, frnY-P.PadH, P.BaseW, frnY-P.PadH, "hidden")}
+  ${R(10.5-5.5, frnY-P.BaseH, 11, P.BaseH, "hidden")}
+  ${R(P.BaseW-10.5-5.5, frnY-P.BaseH, 11, P.BaseH, "hidden")}
+  ${R(RibY1, frnY-75-8, P.RibT, 16, "hidden")}
+  ${R(RibY3, frnY-75-8, P.RibT, 16, "hidden")}
+  
+  ${L(P.BaseW/2, frnY-P.BossH-5, P.BaseW/2, frnY+5, "center")}
+  ${L(RibY1+5, frnY-P.BossH-5, RibY1+5, frnY+5, "center")}
+  ${L(RibY3+5, frnY-P.BossH-5, RibY3+5, frnY+5, "center")}
+`;
+
+// ── [4] 치수선 및 마감 ──
+let dims = `
+  ${Dim(0,0, P.BaseL,0, "150", -25)}
+  ${Dim(0,P.BaseW, P.BaseL,P.BaseW, "150", 25)}
+  ${Dim(P.HoleX_R1, P.BaseW, P.HoleX_R2, P.BaseW, "60", 15)}
+  ${Dim(P.HoleX_R2, P.BaseW, P.BaseL, P.BaseW, "30", 15)}
+`;
+let dimsRight = `
+  ${Dim(P.BaseW,0, P.BaseW,P.BaseW, "82", 20)}
+`;
+let dimsFront = `
+  ${Dim(P.BossCx, frnY-75, P.BossCx, frnY, "75", 35)}
+`;
+
+// 표제란 (우측 하단)
+let titleBlock = `
+  <rect x="730" y="650" width="250" height="80" class="title-block" fill="#fff"/>
+  <line x1="730" y1="690" x2="980" y2="690" class="title-block"/>
+  <line x1="810" y1="650" x2="810" y2="730" class="title-block"/>
+  <text x="770" y="675" font-size="14" font-weight="bold" fill="#000" text-anchor="middle">도 명</text>
+  <text x="895" y="675" font-size="16" font-weight="bold" fill="#000" text-anchor="middle">Bracket (174)</text>
+  <text x="770" y="715" font-size="14" font-weight="bold" fill="#000" text-anchor="middle">척 도</text>
+  <text x="895" y="715" font-size="14" fill="#000" text-anchor="middle">제3각법 / SVG 벡터</text>
+`;
+
+svgHTML += shift(View.Top, topG + dims);
+svgHTML += shift(View.Front, frontG + dimsFront);
+svgHTML += shift(View.Right, rightG + dimsRight);
+svgHTML += titleBlock;
+svgHTML += `</svg>`;
+
+document.getElementById('svg-container').innerHTML = svgHTML;
+</script>
+</body>
+</html>

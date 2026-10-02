@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>SECAD — 174 마스터 3각법 도면</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#e0e0e0;font-family:'Malgun Gothic',sans-serif;padding:20px;display:flex;flex-direction:column;align-items:center}
+h2{font-size:16px;margin-bottom:10px;color:#111;text-shadow:1px 1px #fff}
+.sheet{background:#fff;border:3px solid #111;padding:0;position:relative;box-shadow:5px 5px 15px rgba(0,0,0,0.2)}
+canvas{display:block}
+.tb{border-top:2px solid #111;display:flex;font-size:11px;background:#fafafa}
+.tb-cell{border-right:1px solid #ccc;padding:6px 12px;display:flex;flex-direction:column;justify-content:center}
+.tb-cell:last-child{border-right:none}
+.tb-label{color:#666;font-size:9px;margin-bottom:2px}
+.tb-val{font-weight:bold;color:#111}
+.tb-wide{flex:1}
+</style>
+</head>
+<body>
+<h2>[SECAD] 도면 174 — 마스터 3각법 (자동 중앙정렬 & 무결성 검증판)</h2>
+<div class="sheet">
+<canvas id="cv" width="960" height="680"></canvas>
+<div class="tb">
+  <div class="tb-cell"><div class="tb-label">도명</div><div class="tb-val">3D 연습도면 174 (Bracket)</div></div>
+  <div class="tb-cell"><div class="tb-label">투상/척도</div><div class="tb-val">제3각법 / 1:2.5</div></div>
+  <div class="tb-cell tb-wide"><div class="tb-label">검증 기준</div><div class="tb-val">Base(150x82), Holes(4-φ11, 2-φ10, 2-φ16), Rib(10), Gap(20)</div></div>
+</div>
+</div>
+
+<script>
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const S = 2.5; // 1mm = 2.5px (최적 스케일)
+
+// ── [1] 절대 좌표/치수 마스터 설계도 (무결성 기준) ──
+const D = {
+  L: 150, W: 82, H: 96,    // 전체 외곽선
+  BT: 10, Gap: 20, RibT: 10, // 두께 및 간격
+  PadW: 30, PadH: 25, PadR: 15, // 좌측 패드 형상
+  BossR: 21, BossCx: 129, BossCy: 21, // 우측 보스 (Cy는 위에서부터 96-75=21)
+};
+// 구멍 좌표 (Top View 기준)
+const H = {
+  L_X: 15, // 좌측 2-φ10 구멍 X
+  L_Y1: 16, L_Y2: 66, // (41-25=16, 41+25=66) 패드 중심과 동심원
+  B_X1: 60, B_X2: 120, // 바닥 4-φ11 구멍 X
+  B_Y1: 10.5, B_Y2: 82-10.5, // 바닥 구멍 Y
+  R_X: 129, R_Y1: 26, R_Y2: 56 // 우측 2-φ16 구멍 중심 (보강대 중심 Y21~31 -> 26)
+};
+
+// ── [2] 배치도(Layout) 계산 (중앙 정렬) ──
+const GapXY = 80; // 뷰 사이 간격(px)
+const TotalW = D.L*S + GapXY + D.W*S; // 정면도W + 간격 + 우측면도W
+const TotalH = D.W*S + GapXY + D.H*S; // 평면도H + 간격 + 정면도H
+const StartX = (cv.width - TotalW) / 2;
+const StartY = (cv.height - TotalH) / 2;
+
+// 각 뷰의 원점 (좌상단 기준)
+const TopO   = {x: StartX, y: StartY};
+const FrontO = {x: StartX, y: StartY + D.W*S + GapXY};
+const RightO = {x: StartX + D.L*S + GapXY, y: FrontO.y};
+
+// ── [3] 그리기 유틸리티 ──
+function O(lw=1.5,col='#111'){ctx.lineWidth=lw;ctx.strokeStyle=col;ctx.setLineDash([]);}
+function CL(){ctx.lineWidth=0.6;ctx.strokeStyle='#d32f2f';ctx.setLineDash([10,3,3,3]);}
+function HD(){ctx.lineWidth=0.8;ctx.strokeStyle='#555';ctx.setLineDash([4,3]);}
+function PL(){ctx.lineWidth=0.3;ctx.strokeStyle='#1976d2';ctx.setLineDash([2,4]);} // 투상선
+function Txt(str,x,y){ctx.font='bold 12px Arial';ctx.fillStyle='#333';ctx.textAlign='center';ctx.fillText(str,x,y);}
+
+// 현재 뷰로 캔버스 좌표축 이동
+function setView(origin) {
+  ctx.setTransform(S, 0, 0, S, origin.x, origin.y);
+}
+const line=(x1,y1,x2,y2)=>{ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}
+const rect=(x,y,w,h)=>{ctx.beginPath();ctx.rect(x,y,w,h);ctx.stroke();}
+const circ=(x,y,r)=>{ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.stroke();}
+
+// ── [4] 평면도 (TOP VIEW) ──
+ctx.save(); setView(TopO);
+O(2); rect(0, 0, D.L, D.W); // 베이스
+O(1.5);
+// 좌측 패드 (폭 30) 및 둥근 마감 (동심원 R15)
+ctx.beginPath(); ctx.arc(H.L_X, H.L_Y1, D.PadR, Math.PI/2, Math.PI*1.5, false); ctx.stroke();
+ctx.beginPath(); ctx.arc(H.L_X, H.L_Y2, D.PadR, Math.PI/2, Math.PI*1.5, false); ctx.stroke();
+line(H.L_X, H.L_Y1-D.PadR, H.R_X, H.L_Y1-D.PadR); // 패드 외측선 1
+line(H.L_X, H.L_Y2+D.PadR, H.R_X, H.L_Y2+D.PadR); // 패드 외측선 2
+// 리브 폭 10 (패드 안쪽에 일치, 바깥쪽은 턱짐)
+line(H.L_X, 21, D.L, 21); // 상단리브 내측 (Gap경계)
+line(H.R_X, 31, D.L, 31); // 상단리브 외측 (보스부터 턱까지)
+line(H.R_X, 31, H.R_X, H.L_Y1+D.PadR); // 턱(Step) 수직선
+line(H.L_X, 61, D.L, 61); // 하단리브 내측
+line(H.R_X, 51, D.L, 51); // 하단리브 외측
+line(H.R_X, 51, H.R_X, H.L_Y2-D.PadR); // 턱(Step) 수직선
+
+// 보스 평면 투영 (폭 10, 위치 X=129~150)
+line(H.R_X-21, 21, H.R_X-21, 31); line(H.R_X+21, 21, H.R_X+21, 31);
+line(H.R_X-21, 51, H.R_X-21, 61); line(H.R_X+21, 51, H.R_X+21, 61);
+
+// 구멍 (실선 6개)
+circ(H.L_X, H.L_Y1, 5); circ(H.L_X, H.L_Y2, 5); // 2-φ10
+circ(H.B_X1, H.B_Y1, 5.5); circ(H.B_X2, H.B_Y1, 5.5); // 상단 2-φ11
+circ(H.B_X1, H.B_Y2, 5.5); circ(H.B_X2, H.B_Y2, 5.5); // 하단 2-φ11
+HD(); // 보스 숨은 구멍 2-φ16
+rect(H.R_X-8, 21, 16, 10); rect(H.R_X-8, 51, 16, 10);
+
+CL(); // 중심선
+line(-5, D.W/2, D.L+5, D.W/2);
+line(H.L_X, H.L_Y1-10, H.L_X, H.L_Y1+10); line(H.L_X-10, H.L_Y1, H.L_X+10, H.L_Y1);
+line(H.L_X, H.L_Y2-10, H.L_X, H.L_Y2+10); line(H.L_X-10, H.L_Y2, H.L_X+10, H.L_Y2);
+[H.B_X1, H.B_X2].forEach(x => { line(x, H.B_Y1-8, x, H.B_Y1+8); line(x-8, H.B_Y1, x+8, H.B_Y1); });
+[H.B_X1, H.B_X2].forEach(x => { line(x, H.B_Y2-8, x, H.B_Y2+8); line(x-8, H.B_Y2, x+8, H.B_Y2); });
+line(H.R_X, 15, H.R_X, 67);
+ctx.restore();
+
+// ── [5] 정면도 (FRONT VIEW) ──
+ctx.save(); setView(FrontO);
+O(2);
+ctx.beginPath(); // 전체 외곽
+ctx.moveTo(0, D.H); ctx.lineTo(D.L, D.H); ctx.lineTo(D.L, D.H-D.BT);
+ctx.lineTo(D.BossCx + D.BossR, D.H-D.BT); 
+// 보스 원호 (R21)
+ctx.arc(D.BossCx, D.BossCy, D.BossR, 0, Math.PI, true);
+// 경사 리브
+ctx.lineTo(H.L_X + D.PadR, D.H - D.PadH);
+// 패드 수평선 및 직각 하강
+ctx.lineTo(0, D.H - D.PadH); ctx.lineTo(0, D.H);
+ctx.stroke();
+
+O(1.5);
+line(0, D.H-D.BT, D.L, D.H-D.BT); // 베이스 윗면
+line(H.L_X + D.PadR, D.H - D.PadH, H.L_X + D.PadR, D.H - D.BT); // 패드 우측 턱 수직선
+line(D.BossCx - D.BossR, D.BossCy, D.BossCx - D.BossR, D.H - D.BT); // 보스 좌측 수직선
+circ(D.BossCx, D.BossCy, 8); // 2-φ16
+
+HD();
+rect(H.L_X-5, D.H-D.PadH, 10, D.PadH); // 좌측 2-φ10 숨은선
+rect(H.B_X1-5.5, D.H-D.BT, 11, D.BT); // 베이스 4-φ11 숨은선 (겹침)
+rect(H.B_X2-5.5, D.H-D.BT, 11, D.BT); 
+CL();
+line(H.L_X, D.H-D.PadH-5, H.L_X, D.H+5);
+line(H.B_X1, D.H-D.BT-5, H.B_X1, D.H+5);
+line(H.B_X2, D.H-D.BT-5, H.B_X2, D.H+5);
+line(D.BossCx, D.BossCy-26, D.BossCx, D.H+5);
+line(D.BossCx-12, D.BossCy, D.BossCx+12, D.BossCy);
+ctx.restore();
+
+// ── [6] 우측면도 (RIGHT VIEW) ──
+ctx.save(); setView(RightO);
+O(2); rect(0, D.H-D.BT, D.W, D.BT); // 베이스
+O(1.5);
+// 2개의 수직 리브/보스 프로파일
+rect(H.R_Y1-5, D.BossCy, 10, D.H-D.BT - D.BossCy);
+rect(H.R_Y2-5, D.BossCy, 10, D.H-D.BT - D.BossCy);
+ctx.beginPath(); ctx.arc(H.R_Y1, D.BossCy, D.BossR, Math.PI, 0, false); ctx.stroke();
+ctx.beginPath(); ctx.arc(H.R_Y2, D.BossCy, D.BossR, Math.PI, 0, false); ctx.stroke();
+
+HD(); // 패드 숨은선 (높이 25)
+line(0, D.H-D.PadH, D.W, D.H-D.PadH);
+// 베이스 구멍 숨은선
+rect(H.B_Y1-5.5, D.H-D.BT, 11, D.BT); rect(H.B_Y2-5.5, D.H-D.BT, 11, D.BT);
+// φ16 구멍 숨은선
+rect(H.R_Y1-5, D.BossCy-8, 10, 16); rect(H.R_Y2-5, D.BossCy-8, 10, 16);
+
+CL();
+line(D.W/2, -5, D.W/2, D.H+5);
+line(H.R_Y1, D.BossCy-26, H.R_Y1, D.H+5);
+line(H.R_Y2, D.BossCy-26, H.R_Y2, D.H+5);
+ctx.restore();
+
+// ── [7] 뷰 연결 투상선 (정합성 증명) ──
+ctx.setTransform(1,0,0,1,0,0); PL();
+// 평면도 <-> 정면도 (X축 투상)
+[0, H.L_X, H.B_X1, H.B_X2, D.BossCx, D.L].forEach(x => {
+  line(TopO.x + x*S, TopO.y + D.W*S + 5, FrontO.x + x*S, FrontO.y - 5);
+});
+// 정면도 <-> 우측면도 (Y축 투상)
+[0, D.BossCy, D.H-D.PadH, D.H-D.BT, D.H].forEach(y => {
+  line(FrontO.x + D.L*S + 5, FrontO.y + y*S, RightO.x - 5, RightO.y + y*S);
+});
+// 평면도 우단 <-> 우측면도 상단 (45도 꺾임 투상 힌트선)
+line(TopO.x + D.L*S + 5, TopO.y + D.W*S, RightO.x, FrontO.y - 5); 
+
+// 라벨
+Txt("평 면 도 (Top View)", TopO.x + (D.L*S)/2, TopO.y - 15);
+Txt("정 면 도 (Front View)", FrontO.x + (D.L*S)/2, FrontO.y + D.H*S + 25);
+Txt("우 측 면 도 (Right View)", RightO.x + (D.W*S)/2, RightO.y + D.H*S + 25);
+
+</script>
+</body>
+</html>
