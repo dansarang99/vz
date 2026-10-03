@@ -1,0 +1,66 @@
+{
+  "success_patterns": [
+    {
+      "timestamp": "2026-10-03 12:52:09",
+      "chosen_action": {
+        "id": "ACT_03",
+        "name": "과거 성공 패턴(vf 기지) 자동 이식 및 즉각 실행 스크립트 빌드",
+        "expected_impact": 0.95,
+        "cost_risk": 0.1,
+        "speed": 0.95,
+        "calculated_score": 10.64
+      },
+      "reward": 1.0
+    },
+    {
+      "timestamp": "2026-10-03 12:55:37",
+      "action_id": "ACT_03",
+      "reward_score": 1.0,
+      "comment": "KENTECH CEO 특강 라이브 데모 최고 판정",
+      "status": "POLICY_REINFORCED (강화 성공)",
+      "updated_weights": {
+        "market_trend": 1.2,
+        "cost_efficiency": 1.54,
+        "execution_speed": 1.35
+      }
+    },
+    {
+      "timestamp": "2026-10-03 13:07:43",
+      "action_id": "ACT_03",
+      "reward_score": 1.0,
+      "comment": "KENTECH CEO 특강 라이브 데모 최고 판정",
+      "status": "POLICY_REINFORCED (강화 성공)",
+      "updated_weights": {
+        "market_trend": 1.2,
+        "cost_efficiency": 1.58,
+        "execution_speed": 1.4
+      }
+    }
+  ],
+  "failure_patterns": [],
+  "policy_weights": {
+    "market_trend": 1.2,
+    "cost_efficiency": 1.58,
+    "execution_speed": 1.4
+  },
+  "history": [
+    {
+      "timestamp": "2026-10-03T13:48:32.922794",
+      "model": "gemma2:2b",
+      "scenario": "전남 지역 중견 제조기업의 휴먼브레인(사람 의존)을 AI브레인(자율 의사결정)으로 전환하는 전략",
+      "question": "CEO가 당장 내일부터 전사적으로 AI를 적용할 때 실패하지 않는 1호 실행 수칙은 무엇인가?",
+      "decision": "ERROR: timed out",
+      "elapsed_seconds": 65.084397,
+      "feedback_score": 1.0
+    },
+    {
+      "timestamp": "2026-10-03T13:56:39.996229",
+      "model": "gemma2:2b",
+      "scenario": "전남 지역 중견 제조기업의 휴먼브레인(사람 의존)을 AI브레인(자율 의사결정)으로 전환하는 전략",
+      "question": "CEO가 당장 내일부터 전사적으로 AI를 적용할 때 실패하지 않는 1호 실행 수칙은 무엇인가?",
+      "decision": "## 1호 실행 수칙:  **전남 중견 제조기업 휴먼브레인 AI 적용, Pilot Project 시행**\n\n1. **1호 실행 조치:**  **AI 브레인을 활용한 \"핵심 프로세스 자동화\" Pilot Project를 전남 지역 중견 제조기업 (휴먼브레인)의 핵심 프로세스 (예: 생산량 최적화, 오류 감소)에 적용하여 1개월간 실시한다.**  \n2. **기대 효과 및 위험 회피:**  **AI 브레인 자동화로 인해 5% 이상의 생산성 증가와 10% 정도의 비용 절감을 기대하며, 이를 통해 고객 만족도 향상과 경",
+      "elapsed_seconds": 33.295358,
+      "feedback_score": 1.0
+    }
+  ]
+}
