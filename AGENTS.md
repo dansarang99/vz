@@ -20,7 +20,8 @@
 - **로컬 풀로드 금지**: 10초 이상의 연속 영상 인코딩, Whisper 전사, AI 딥러닝 추론은 로컬 실행을 영구 금지한다.
 - **클라우드 위임**: 모든 고부하 연산은 서버리스 GPU 플랫폼인 Modal(modal.com)로 위임하여 실행하고 결과만 로컬 `result/`로 회수한다.
 
-## 3. 4대 표준 폴더 (Four Core Folders) 절대 규약
+## 3. 4대 표준 폴더 (Four Core Folders) 및 자동 스캐폴딩 규약
+- **Step 0 사전 검문 (Pre-flight Gateway)**: 우리팀이 작업하는 모든 폴더 진입 시 4대 폴더 유무 자동 검사 ➔ 완비 시 **`[SKIP]`** (멱등성 사수), 미비 시 0.1초 만에 **`[AUTO-APPLY]`** (자동 생성 및 `CONVERSATION_TOTAL.md` 초기화, `[001]` 대기).
 - 모든 작업 폴더에는 **오직 아래 4개 폴더만 존재**함:
   1. **`conversation/`**: 단일 통합 실록 `CONVERSATION_TOTAL.md` 보존.
   2. **`prompt/`**: 사용자 및 AI 프롬프트 보존.
