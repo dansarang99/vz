@@ -36,8 +36,11 @@
 - **모든 일련번호는 오직 단 1회만 적용해야 함 (Single-Use Unique Serial).**
 - 번호 없는 파일의 result 폴더 진입 일체 차단.
 
-## 5. conversation/CONVERSATION_TOTAL.md 단일 실록 꼬리물기 보존
-- `CONVERSATION_TOTAL.md` 단 하나의 파일로 관리되며, 끝나는 지점마다 타임스탬프 명시.
+## 5. ⚡ [초강력 절대 강제 조항] conversation/CONVERSATION_TOTAL.md 100% 무손실 복제(Verbatim Mirroring) 절대 헌장
+- **임의 요약·축약 절대 금지 (Zero-Summary, Zero-Tolerance)**: 대화 내용을 요약하거나 축약하여 기록하는 행위를 전면 금지함.
+- **100% 원문 대화 복제 (Verbatim 1:1 Mirroring)**: 본부장님의 말씀과 AI의 보고 전문을 단 한 글자도 빠짐없이 토씨 하나 틀리지 않고 100% 원문 그대로(Verbatim) 기록함.
+- **단일 마스터 실록 꼬리물기 (Single Master Append-Only)**: `CONVERSATION_TOTAL.md` 단 하나의 파일로 관리되며, 끝나는 지점마다 정확한 일시 및 타임스탬프를 명시함.
+- **글로벌 엔진 상시 구동**: 세션 종료 및 마일스톤마다 `python C:\Users\note\.gemini\scripts\save_conversation_archive.py` 구동을 의무화함.
 
 ## 6. 엔진 스크립트
 - `python C:\Users\note\.gemini\scripts\save_conversation_archive.py [현재작업폴더]`
